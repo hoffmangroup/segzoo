@@ -2,8 +2,7 @@
 from setuptools import setup, find_packages
 from codecs import open
 from os import path
-# from segzoo import __version__ TODO
-__version__ = "1.0.0.dev6"
+from segzoo import __version__
 
 here = path.abspath(path.dirname(__file__))
 
@@ -168,7 +167,7 @@ setup(
     # executes the function `main` from this package when invoked:
     entry_points={  # Optional
         'console_scripts': [
-            'segzoo=segzoo:main',
+            'segzoo=segzoo.__main__:main',
         ],
     },
 

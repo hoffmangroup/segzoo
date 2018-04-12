@@ -8,7 +8,7 @@ CLOBBER = "--clobber"
 NOPLOT = ""
 OUTDIR = config['outdir']
 SEGMENTATION = config['segmentation']
-GMTK_PARAMS = config["parameters"]  # "/scratch/turnkey/data/2018-02-22/train/params/params.params"
+GMTK_PARAMS = config["parameters"]  if config["parameters"] else []
 
 PREFIX = config["prefix"]  # ""/users/masenjoi/anaconda2/envs/snakemake-test/"
 SPECIES = config['species']  # "Homo_sapiens"
@@ -31,17 +31,16 @@ PLOTS = "plots"
 
 preprocessed_segmentation = join(OUTDIR, DATA,"segmentation","segmentation.pkl.gz")
 
-
 #Main rule that sets the targets to obtain
 rule all:
 	input:
 		dynamic(join(OUTDIR, DATA, "feature_distance", "gene_biotype", "{biotype}", "feature_distance.tab" )),
 		#os.path.join(OUTDIR, DATA, "feature_distance", "general", "feature_distance.tab"),
-		gmtk=join(OUTDIR, RESULTS, "gmtk_parameters", RESULTFILE),
 		len_dist=join(OUTDIR, RESULTS, "length_distribution", RESULTFILE),
 		nuc=join(OUTDIR, RESULTS, "nucleotide", RESULTFILE),
 		agg=join(OUTDIR, RESULTS, "aggregation", "general", RESULTFILE),
-		aggs=dynamic(join(OUTDIR, RESULTS, "aggregation", "gene_biotype", "{biotype}", RESULTFILE))
+		aggs=dynamic(join(OUTDIR, RESULTS, "aggregation", "gene_biotype", "{biotype}", RESULTFILE)),
+		gmtk=join(OUTDIR, RESULTS, "gmtk_parameters", RESULTFILE) if config['parameters'] else []
 	output:
 		outfile=join(OUTDIR, PLOTS, "plot.png")
     # params:
@@ -111,7 +110,7 @@ rule run_segtools_gmtk_parameters:
 		outdir=join(OUTDIR, DATA, "gmtk_parameters")
 	shell:
 		"segtools-gmtk-parameters {QUIET} {CLOBBER} --outdir {params.outdir} {GMTK_PARAMS};"
-		"cp {output.csv} {output.result}" #TODO PLOT is necessary to obtain .csv and no variance is available
+		"cp {output.csv} {output.result}" # TODO PLOT is necessary to obtain .csv and no variance is available
 
 
 #Segtools Aggregation results obtention, general and by gene_biotype
