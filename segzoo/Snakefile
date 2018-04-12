@@ -1,3 +1,4 @@
+import os
 from os.path import join, splitext
 
 
@@ -5,11 +6,13 @@ from os.path import join, splitext
 QUIET = ""
 CLOBBER = "--clobber"
 NOPLOT = ""
-OUTDIR = "outdir"
+OUTDIR = config['outdir']
+SEGMENTATION = config['segmentation']
+GMTK_PARAMS = config["parameters"]  # "/scratch/turnkey/data/2018-02-22/train/params/params.params"
 
-PREFIX = "/users/masenjoi/anaconda2/envs/snakemake-test/"
-SPECIES = "Homo_sapiens"
-BUILD = "hg38"
+PREFIX = config["prefix"]  # ""/users/masenjoi/anaconda2/envs/snakemake-test/"
+SPECIES = config['species']  # "Homo_sapiens"
+BUILD = config['build']  # "hg38"
 
 recipeGTF = "rnaseq"
 recipeSEQ = "sequence"
@@ -26,11 +29,7 @@ DATA = "data"
 LOGS = "logs"
 PLOTS = "plots"
 
-
-SEGMENTATION = "/scratch/turnkey/data/2018-02-22/annotation/segway.bed.gz"
 preprocessed_segmentation = join(OUTDIR, DATA,"segmentation","segmentation.pkl.gz")
-
-GMTK_PARAMS = "/scratch/turnkey/data/2018-02-22/train/params/params.params"
 
 
 #Main rule that sets the targets to obtain
@@ -45,8 +44,12 @@ rule all:
 		aggs=dynamic(join(OUTDIR, RESULTS, "aggregation", "gene_biotype", "{biotype}", RESULTFILE))
 	output:
 		outfile=join(OUTDIR, PLOTS, "plot.png")
+    # params:
+    #     outdir=OUTDIR,
+    #     results=RESULTS,
+
 	script:
-		"scripts/visualization.py"
+		"visualization.py"
 
 #DOWNLOADING RULES
 #GGD conda installations into the anaconda environment folder
@@ -91,7 +94,7 @@ rule create_gene_biotype_gtf:
 		outdir=join(BUILDPATH, recipeGTF, "gene_biotype"),
 		outfile=fileGTF
 	script:
-		"scripts/create_gene_biotype_gtfs.py"
+		"create_gene_biotype_gtfs.py"
 
 
 #ANALYZING RULES
@@ -140,7 +143,7 @@ rule create_aggregation_results_general:
 	output:
 		outfile=join(OUTDIR, RESULTS, "aggregation", "general", "results")
 	script:
-		"scripts/create_aggregation_results.py"
+		"create_aggregation_results.py"
 
 rule create_aggregation_results_gene_biotype:
 	input:
@@ -148,7 +151,7 @@ rule create_aggregation_results_gene_biotype:
 	output:
 		outfile=join(OUTDIR, RESULTS, "aggregation", "gene_biotype", "{biotype}", "results")
 	script:
-		"scripts/create_aggregation_results.py"
+		"create_aggregation_results.py"
 
 
 #Segtools Length Distribution execution and results creation
@@ -208,7 +211,7 @@ rule create_nucleotide_results:
 	output:
 		outfile=join(OUTDIR, RESULTS, "nucleotide", "results")
 	script:
-		"scripts/create_nucleotide_results.py"
+		"create_nucleotide_results.py"
 
 
 # Visualization
