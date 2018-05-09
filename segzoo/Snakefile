@@ -8,9 +8,9 @@ CLOBBER = "--clobber"
 NOPLOT = ""
 OUTDIR = config['outdir']
 SEGMENTATION = config['segmentation']
-GMTK_PARAMS = config["parameters"]  if config["parameters"] else []
+GMTK_PARAMS = config["parameters"] if config["parameters"] else []
 
-PREFIX = config["prefix"]  # ""/users/masenjoi/anaconda2/envs/snakemake-test/"
+PREFIX = config["prefix"]  # "/users/masenjoi/anaconda2/envs/snakemake-test/"
 SPECIES = config['species']  # "Homo_sapiens"
 BUILD = config['build']  # "hg38"
 
@@ -29,7 +29,7 @@ DATA = "data"
 LOGS = "logs"
 PLOTS = "plots"
 
-preprocessed_segmentation = join(OUTDIR, DATA,"segmentation","segmentation.pkl.gz")
+preprocessed_segmentation = join(OUTDIR, DATA,"segmentation", "segmentation.pkl.gz")
 
 #Main rule that sets the targets to obtain
 rule all:
@@ -76,7 +76,7 @@ rule run_segtools_preprocess:
 	output:
 		preprocessed_segmentation
 	params:
-		outfile=splitext(splitext(preprocessed_segmentation)[0])[0]
+		outfile=splitext(splitext(preprocessed_segmentation)[0])[0] # segtools-preprocess automatically adds the extensions
 	shell:
 		"segtools-preprocess {QUIET} {CLOBBER} {SEGMENTATION} {params.outfile}"
 
@@ -99,7 +99,6 @@ rule create_gene_biotype_gtf:
 #ANALYZING RULES
 
 #Segtools GMTK-Parameters execution
-#TODO make input for path
 rule run_segtools_gmtk_parameters:
 	input:
 		GMTK_PARAMS

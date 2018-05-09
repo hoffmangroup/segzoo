@@ -24,5 +24,4 @@ def main(args=sys.argv[1:]):
                         help='Prefix where all the GGD data is going to be downloaded')
 
     parsed_args = parser.parse_args(args)
-
-    snakemake.snakemake(path.join(here, "Snakefile"), config=vars(parsed_args))  # dryrun=True, printshellcmds=True)
+    snakemake.snakemake(path.join(here, "Snakefile"), config=vars(parsed_args))  # dryrun=True, printshellcmds=True, printreason=True)

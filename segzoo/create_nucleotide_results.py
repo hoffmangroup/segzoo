@@ -9,6 +9,6 @@ usecols = ["4_usercol", "12_num_A", "13_num_C", "14_num_G", "15_num_T", "18_seq_
 df = pd.read_table(snakemake.input.infile, header=0, usecols=usecols)
 df.columns = ["label", "num_A", "num_C", "num_G", "num_T", "length"]
 sums = df.groupby("label").sum()
-sums["GC_content"] = sums["num_G"].add(sums["num_C"]).div(sums["length"])
-sums["AT_content"] = sums["num_A"].add(sums["num_T"]).div(sums["length"])
+sums["GC content"] = sums["num_G"].add(sums["num_C"]).div(sums["length"])
+sums["AT content"] = sums["num_A"].add(sums["num_T"]).div(sums["length"])
 sums.to_csv(path_or_buf=snakemake.output.outfile, sep='\t')
