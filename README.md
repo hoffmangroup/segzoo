@@ -25,6 +25,6 @@ After running the command `segzoo` by specifying the segmentation file and all t
 
 After the execution has finished, the new directory will be created (**outdir** is the default name). In the **data** folder you will be able to find the results for all the tools' analysis. In **results** you will find the tables of processed results used in the visualization. In **logs** some relevant information about the run. Finally, the visualization will be in the **plots** directory. It will look something like this:
 
-![Plot](plots/plot.png)
+![Plot](https://bitbucket.org/hoffmanlab/segzoo/raw/default/plots/plot.png)
 
 Y-axis are the labels of the segmentation for all the plots. As a note: the aggregation results displayed are the percentage of aggregations in one component in comparison for all the gene biotype, so notice that each row adds up 100.
