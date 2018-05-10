@@ -10,7 +10,7 @@ OUTDIR = config['outdir']
 SEGMENTATION = config['segmentation']
 GMTK_PARAMS = config["parameters"] if config["parameters"] else []
 
-PREFIX = config["prefix"]  # "/users/masenjoi/anaconda2/envs/snakemake-test/"
+PREFIX = config["prefix"]  # "anaconda_path/envs/your_env/"
 SPECIES = config['species']  # "Homo_sapiens"
 BUILD = config['build']  # "hg38"
 
