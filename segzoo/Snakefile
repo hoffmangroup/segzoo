@@ -38,7 +38,7 @@ rule all:
 		# os.path.join(OUTDIR, DATA, "feature_distance", "general", "feature_distance.tab"),
 		len_dist=join(OUTDIR, RESULTS, "length_distribution", RESULTFILE),
 		nuc=join(OUTDIR, RESULTS, "nucleotide", RESULTFILE),
-		# agg=join(OUTDIR, RESULTS, "aggregation", "general", RESULTFILE),
+		agg=join(OUTDIR, RESULTS, "aggregation", "general", RESULTFILE),
 		aggs=dynamic(join(OUTDIR, RESULTS, "aggregation", "gene_biotype", "{biotype}", RESULTFILE)),
 		gmtk=join(OUTDIR, RESULTS, "gmtk_parameters", RESULTFILE) if config['parameters'] else []
 	output:
