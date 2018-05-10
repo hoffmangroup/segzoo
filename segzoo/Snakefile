@@ -5,7 +5,7 @@ from os.path import join, splitext
 #OPTIONS
 QUIET = ""
 CLOBBER = "--clobber"
-NOPLOT = ""
+NOPLOT = "--noplot"
 OUTDIR = config['outdir']
 SEGMENTATION = config['segmentation']
 GMTK_PARAMS = config["parameters"] if config["parameters"] else []
