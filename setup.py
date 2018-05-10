@@ -21,7 +21,7 @@ setup(
     author_email='asenjomarc@gmail.com',
     classifiers=[
         'Development Status :: 3 - Alpha',
-        'Intended Audience :: Bio-Informatics engineers',
+        # 'Intended Audience :: Developers',
         "Topic :: Scientific/Engineering :: Bio-Informatics",
         "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
         'Programming Language :: Python :: 3',
