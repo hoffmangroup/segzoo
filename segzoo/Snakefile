@@ -34,19 +34,15 @@ preprocessed_segmentation = join(OUTDIR, DATA,"segmentation", "segmentation.pkl.
 #Main rule that sets the targets to obtain
 rule all:
 	input:
-		dynamic(join(OUTDIR, DATA, "feature_distance", "gene_biotype", "{biotype}", "feature_distance.tab" )),
-		#os.path.join(OUTDIR, DATA, "feature_distance", "general", "feature_distance.tab"),
+		# dynamic(join(OUTDIR, DATA, "feature_distance", "gene_biotype", "{biotype}", "feature_distance.tab" )),
+		# os.path.join(OUTDIR, DATA, "feature_distance", "general", "feature_distance.tab"),
 		len_dist=join(OUTDIR, RESULTS, "length_distribution", RESULTFILE),
 		nuc=join(OUTDIR, RESULTS, "nucleotide", RESULTFILE),
-		agg=join(OUTDIR, RESULTS, "aggregation", "general", RESULTFILE),
+		# agg=join(OUTDIR, RESULTS, "aggregation", "general", RESULTFILE),
 		aggs=dynamic(join(OUTDIR, RESULTS, "aggregation", "gene_biotype", "{biotype}", RESULTFILE)),
 		gmtk=join(OUTDIR, RESULTS, "gmtk_parameters", RESULTFILE) if config['parameters'] else []
 	output:
 		outfile=join(OUTDIR, PLOTS, "plot.png")
-    # params:
-    #     outdir=OUTDIR,
-    #     results=RESULTS,
-
 	script:
 		"visualization.py"
 
