@@ -6,7 +6,7 @@ Segzoo is a tool that allows to run various genomic analysis on a segmentation o
 
 ## How to install
 
-Segzoo is a python 3 tool, so if you have python 2 installed it is highly recommended for you to install segzoo in a separate python 3 environment. To create such an environment run `conda create -n python3_env python==3.6` where you can change the name of the environment, `python3_env`. Accept all the installation steps.
+Segzoo is a python 3 tool, so if you have python 2 installed it is highly recommended for you to install segzoo in a separate python 3 environment. To create such an environment run `conda create -n python3_env python=3.6` where you can change the name of the environment, `python3_env`. Accept all the installation steps.
 
 Next, you need to activate this environment. Run `source activate python3_env` specifying the name of the environment you chose before. Now that you already are in it, you can install segzoo. You can do that by running `pip install segzoo`, which will require you to have bedtools already installed, as it's only in anaconda. To install bedtools beforehand you can use `conda install -c bioconda bedtools`. Another option is to install it using `conda install -c bioconda segzoo` which will take care of all the dependencies (__WIP__).
 
