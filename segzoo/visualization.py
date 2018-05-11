@@ -1,6 +1,7 @@
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from collections import defaultdict
 from os import path
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
@@ -47,7 +48,7 @@ def length_distribution():
     return res_len_hm, res_len_ann
 
 
-# Prepare the main matrix for the heatmap and its annotation, both in DataFrames
+# Prepare the mix matrix for the heatmap and its annotation, both in DataFrames
 def mix_data_matrix():
     # Joining both matrix to create final heatmap and annotation
     res_nuc_hm, res_nuc_ann = nucleotide()
@@ -59,67 +60,101 @@ def mix_data_matrix():
     return res_hm, res_ann
 
 
-# Prepare the aggregation results for 'protein_coding' and 'lincRNA' and join them in a DataFrame
-def aggregation():
-    # TODO don't join
-    pc_file = next(x for x in snakemake.input.aggs if path.basename(path.dirname(x)) == 'protein_coding')
-    lrna_file = next(x for x in snakemake.input.aggs if path.basename(path.dirname(x)) == 'lincRNA')
-
+# Prepare the aggregation results in a dictionary of DataFrames by gene_biotype and return the maximum value
+def aggregation(biotypes):
     # Rename columns
-    column_names = ["5' flanking", "initial exon", "initial intron", "internal exon", "internal introns", \
+    COLUMN_NAMES = ["5' flanking", "initial exon", "initial intron", "internal exon", "internal introns", \
                     "terminal exon", "terminal intron", "3' flanking"]
 
-    res_agg_pc = pd.read_table(pc_file, index_col=0)
-    res_agg_pc.columns = column_names
+    df_dict = defaultdict()
+    max_value = 0
+    for biotype in biotypes:
+        filename = next(x for x in snakemake.input.aggs if path.basename(path.dirname(x)) == biotype)
+        df_dict[biotype] = pd.read_table(filename, index_col=0)
+        df_dict[biotype].columns = COLUMN_NAMES
 
-    res_agg_linc = pd.read_table(lrna_file, index_col=0)
-    res_agg_linc.columns = column_names
+        # Turn the results into a percentage of the labels's aggregation in a gene biotype
+        for row in df_dict[biotype].index:
+            df_dict[biotype].iloc[row] = (df_dict[biotype].iloc[row] / df_dict[biotype].iloc[row].sum()).round(2) * 100
+        # Update max value
+        max_value = max(df_dict[biotype].max().max(), max_value)
 
-    res_agg = res_agg_pc.join(res_agg_linc, lsuffix='\n protein coding', rsuffix='\n lincRNA')
-
-    # Turn the results into a percentage of the labels's aggregation in a gene biotype
-    for row in res_agg.index:
-        res_agg.iloc[row, :8] = res_agg.iloc[row, :8] / res_agg.iloc[row, :8].sum()
-        res_agg.iloc[row, 8:] = res_agg.iloc[row, 8:] / res_agg.iloc[row, 8:].sum()
-
-    res_agg_ann = res_agg.copy().round(2) * 100  # Turn into percentage
-    # For the heatmap, map the maximum value of each gene_biotype to 1
-    res_agg.iloc[:, :8] = res_agg.iloc[:, :8] / res_agg.iloc[:, :8].max().max()
-    res_agg.iloc[:, 8:] = res_agg.iloc[:, 8:] / res_agg.iloc[:, 8:].max().max()
-
-    return res_agg, res_agg_ann
+    return df_dict, max_value
 
 
-sns.set(font_scale=1.5)
+# The biotypes wanted for the visualization, in order of appearance
+BIOTYPES = [
+    #     '3prime_overlapping_ncrna',
+    #     'antisense',
+    #     'IG_C_gene',
+    #     'IG_C_pseudogene',
+    #     'IG_D_gene',
+    #     'IG_J_gene',
+    #     'IG_J_pseudogene',
+    #     'IG_V_gene',
+    #     'IG_V_pseudogene',
+    #     'known_ncrna',
+    'lincRNA',
+    #     'miRNA',
+    #     'misc_RNA',
+    #     'Mt_rRNA',
+    #     'Mt_tRNA',
+    #     'non_coding',
+    #     'polymorphic_pseudogene',
+    #     'processed_pseudogene',
+    #     'processed_transcript',
+    'protein_coding',
+    #     'pseudogene',
+    #     'rRNA',
+    #     'sense_intronic',
+    #     'sense_overlapping',
+    #     'snoRNA',
+    #     'snRNA',
+    #     'TEC',
+    #     'transcribed_processed_pseudogene',
+    #     'transcribed_unitary_pseudogene',
+    #     'transcribed_unprocessed_pseudogene',
+    #     'translated_processed_pseudogene',
+    #     'translated_unprocessed_pseudogene',
+    #     'TR_C_gene',
+    #     'TR_D_gene',
+    #     'TR_J_gene',
+    #     'TR_J_pseudogene',
+    #     'TR_V_gene',
+    #     'TR_V_pseudogene',
+    #     'unitary_pseudogene',
+    #     'unprocessed_pseudogene',
+]
 
-# Color maps for the visualization
-cmap_gmtk = sns.diverging_palette(220, 10, as_cmap=True)
-# cmap_mix = sns.diverging_palette(176, 360, as_cmap=True)
-# cmap_agg = sns.diverging_palette(46, 360, as_cmap=True)
-# cmap_mix = sns.light_palette('lightblue', as_cmap=True)
-# cmap_agg = sns.light_palette('lightgreen', as_cmap=True)
-
-if snakemake.config['parameters']:
-    res_gmtk = gmtk_parameters()
-else:
-    res_gmtk = pd.DataFrame()
-res_mix_hm, res_mix_ann = mix_data_matrix()
-res_agg_hm, res_agg_ann = aggregation()
-
+NUM_COMPONENTS = 8
 GMTK_FACTOR = 1
 MIX_FACTOR = 1.5
 AGG_FACTOR = 1.8
 ROW_CORRECTOR = 0.8
 
+sns.set(font_scale=1.5)
+
+# Color maps for the visualization
+cmap_gmtk = sns.diverging_palette(220, 10, as_cmap=True)
+
+# Call the functions that obtain the results in DataFrames
+if snakemake.config['parameters']:
+    res_gmtk = gmtk_parameters()
+else:
+    res_gmtk = pd.DataFrame()
+res_mix_hm, res_mix_ann = mix_data_matrix()
+res_agg_dict, agg_vmax = aggregation(BIOTYPES)
+
 n_rows = res_mix_hm.shape[0] * ROW_CORRECTOR
-n_columns = res_gmtk.shape[1] * GMTK_FACTOR + res_mix_hm.shape[1] * MIX_FACTOR + res_agg_hm.shape[1] * AGG_FACTOR
+n_columns = res_gmtk.shape[1] * GMTK_FACTOR + res_mix_hm.shape[1] * MIX_FACTOR + len(
+    res_agg_dict) * NUM_COMPONENTS * AGG_FACTOR
 
 # Create grid and plot the results in two or three separate plots
 f, (ax_gmtk, ax_mix, ax_agg) = \
     plt.subplots(1, 3, figsize=(n_columns, n_rows), sharey=True, \
-                 gridspec_kw={"wspace": 0.1,
+                 gridspec_kw={"wspace": 0.08,
                               "width_ratios": [res_gmtk.shape[1] * GMTK_FACTOR, res_mix_hm.shape[1] * MIX_FACTOR,
-                                               res_agg_hm.shape[1] * AGG_FACTOR]})
+                                               len(res_agg_dict) * NUM_COMPONENTS * AGG_FACTOR]})
 
 # GMTK parameters
 if snakemake.config['parameters']:
@@ -141,23 +176,31 @@ cbar_mix.set_ticklabels(['low', 'high'])
 ax_mix.set_ylabel('')
 
 # Aggregation
-divider = make_axes_locatable(ax_agg)
-ax_agg2 = divider.append_axes("right", size="100%", pad=0.3)
+ax_agg_list = [None] * len(BIOTYPES)  # Structure to store the divided axis
+ax_agg_list[0] = ax_agg
+
+divider = make_axes_locatable(ax_agg_list[0])
+title_args = dict(fontsize=20, position=(1.0, 1.0), ha='right', va='bottom')
+
+# Divide axes, plot heatmap and edit axis configuration for each biotype
+for i in range(1, len(res_agg_dict)):
+    ax_agg_list[i] = divider.append_axes("right", size="100%", pad=0.3)
+    sns.heatmap(res_agg_dict[BIOTYPES[i]], annot=True, cbar=False, vmin=0, vmax=agg_vmax, cmap='Blues',
+                ax=ax_agg_list[i], fmt='.5g')
+    ax_agg_list[i].set_title(BIOTYPES[i], **title_args)
+    ax_agg_list[i].set_yticklabels([])
+    ax_agg_list[i].set_xticklabels(ax_agg_list[i].get_xticklabels(), rotation=90)
 ax_agg_cbar = divider.append_axes("right", size="3%", pad=0.3)
 
-sns.heatmap(res_agg_hm.iloc[:, :8], annot=res_agg_ann.iloc[:, :8], cbar=False, cmap='Blues', ax=ax_agg, fmt='.5g')
-g_agg = sns.heatmap(res_agg_hm.iloc[:, 8:], annot=res_agg_ann.iloc[:, 8:], cbar=True, vmin=0, vmax=1,
-                    cbar_ax=ax_agg_cbar, cmap='Blues', ax=ax_agg2, fmt='.5g')
-
+g_agg = sns.heatmap(res_agg_dict[BIOTYPES[0]], annot=True, cbar=True, vmin=0, vmax=agg_vmax, cbar_ax=ax_agg_cbar,
+                    cmap='Blues', ax=ax_agg_list[0], fmt='.5g')
+ax_agg_list[0].text(0, -0.5, "Aggregation (%)", fontsize=25, ha='left', va='bottom')
+ax_agg_list[0].set_title(BIOTYPES[0], **title_args)
+ax_agg_list[i].set_xticklabels(ax_agg_list[i].get_xticklabels(), rotation=90)
+# do not set yticklabels to [], because that will affect GMTK parameters, as it's set to yshare
+# Edit the colorbar created by the first biotype
 cbar_agg = g_agg.collections[0].colorbar
-cbar_agg.set_ticks([0, 1])
-cbar_agg.set_ticklabels(['low', 'high'])
-
-ax_agg.text(0, -0.5, "Aggregation", fontsize=25, ha='left', va='bottom')
-
-title_args = dict(fontsize=20, position=(1.0, 1.0), ha='right', va='bottom')
-ax_agg.set_title('Protein coding', **title_args)
-ax_agg2.set_title('lincRNA', **title_args)
-ax_agg2.set_yticks([])
+cbar_agg.set_ticks([0, agg_vmax])
+cbar_agg.set_ticklabels(['0%', '{0}%'.format(agg_vmax)])
 
 f.savefig(snakemake.output.outfile, bbox_inches='tight')
