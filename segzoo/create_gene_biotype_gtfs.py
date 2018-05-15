@@ -16,7 +16,7 @@ for interval in gtf:
     # This is necessary because the following line changes the order of attributes,
     # and this can lead to segtools crashing
     fields = interval.fields
-    biotype = interval.attrs['gene_biotype']  # gene_type instead of gene_biotype in GH19
+    biotype = interval.attrs['gene_biotype']  # gene_type instead of gene_biotype in hg19
     biotype_dict[biotype].append(fields)
     if interval[GTF_GENE_FEATURE_INDEX] == 'gene':
         biotype_gene_dict[biotype].append(fields)
