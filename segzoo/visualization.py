@@ -1,10 +1,12 @@
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+
 from collections import defaultdict
 from os import path
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
+from segzoo.gene_biotypes import __biotypes__
 
 # Prepare the gmtk parameters in a DataFrame
 def gmtk_parameters():
@@ -61,7 +63,7 @@ def mix_data_matrix():
 
 
 # Prepare the aggregation results in a dictionary of DataFrames by gene_biotype and return the maximum value
-def aggregation(biotypes):
+def aggregation():
     # Rename columns
     COLUMN_NAMES = ["5' flanking", "initial exon", "initial intron", "internal exon", "internal introns", \
                     "terminal exon", "terminal intron", "3' flanking"]
@@ -71,7 +73,7 @@ def aggregation(biotypes):
 
     df_dict = defaultdict()
     max_value = 0
-    for biotype in biotypes:
+    for biotype in __biotypes__:
         filename = next(x for x in snakemake.input.aggs if path.basename(path.dirname(x)) == biotype)
         biotype_df = pd.read_table(filename, index_col=0).apply(to_percent, axis=1).fillna(0)
         biotype_df.columns = COLUMN_NAMES
@@ -82,50 +84,6 @@ def aggregation(biotypes):
 
     return df_dict, max_value
 
-
-# The biotypes wanted for the visualization, in order of appearance
-BIOTYPES = [
-    #         '3prime_overlapping_ncrna',
-    #         'antisense',
-    #         'IG_C_gene',
-    #         'IG_C_pseudogene',
-    #         'IG_D_gene',
-    #         'IG_J_gene',
-    #         'IG_J_pseudogene',
-    #         'IG_V_gene',
-    #         'IG_V_pseudogene',
-    #         'known_ncrna',
-    'lincRNA',
-    #         'miRNA',
-    #         'misc_RNA',
-    #         'Mt_rRNA',
-    #         'Mt_tRNA',
-    #         'non_coding',
-    #         'polymorphic_pseudogene',
-    #         'processed_pseudogene',
-    #         'processed_transcript',
-    'protein_coding',
-    #         'pseudogene',
-    #         'rRNA',
-    #         'sense_intronic',
-    #         'sense_overlapping',
-    #         'snoRNA',
-    #         'snRNA',
-    #         'TEC',
-    #         'transcribed_processed_pseudogene',
-    #         'transcribed_unitary_pseudogene',
-    #         'transcribed_unprocessed_pseudogene',
-    #         'translated_processed_pseudogene',
-    #         'translated_unprocessed_pseudogene',
-    #         'TR_C_gene',
-    #         'TR_D_gene',
-    #         'TR_J_gene',
-    #         'TR_J_pseudogene',
-    #         'TR_V_gene',
-    #         'TR_V_pseudogene',
-    #         'unitary_pseudogene',
-    #         'unprocessed_pseudogene',
-]
 
 NUM_COMPONENTS = 8
 GMTK_FACTOR = 1
@@ -144,11 +102,11 @@ if snakemake.config['parameters']:
 else:
     res_gmtk = pd.DataFrame()
 res_mix_hm, res_mix_ann = mix_data_matrix()
-res_agg_dict, agg_vmax = aggregation(BIOTYPES)
+res_agg_dict, agg_vmax = aggregation()
 
 GMTK_COL = res_gmtk.shape[1] * GMTK_FACTOR + 1
 MIX_COL = res_mix_hm.shape[1] * MIX_FACTOR + 1
-AGG_COL = len(BIOTYPES) * NUM_COMPONENTS * AGG_FACTOR + 1
+AGG_COL = len(__biotypes__) * NUM_COMPONENTS * AGG_FACTOR + 1
 
 n_rows = res_mix_hm.shape[0] * ROW_CORRECTOR
 n_columns = GMTK_COL + MIX_COL + AGG_COL
@@ -182,7 +140,7 @@ divider = make_axes_locatable(ax_agg)
 title_args = dict(fontsize=20, position=(1.0, 1.0), ha='right', va='bottom')
 
 # Divide axes, plot heatmap and edit axis configuration for each biotype
-for biotype in BIOTYPES[1:]:
+for biotype in __biotypes__[1:]:
     ax_agg_aux = divider.append_axes("right", size="100%", pad=0.3)
     sns.heatmap(res_agg_dict[biotype], annot=True, cbar=False, vmin=0, vmax=agg_vmax, cmap='Blues', ax=ax_agg_aux,
                 fmt='.5g')
@@ -190,13 +148,13 @@ for biotype in BIOTYPES[1:]:
     ax_agg_aux.set_yticklabels([])
     ax_agg_aux.set_xticklabels(ax_agg_aux.get_xticklabels(), rotation=90)
 
-if len(BIOTYPES) > 0:
+if len(__biotypes__) > 0:
     ax_agg_cbar = divider.append_axes("right", size=0.35, pad=0.3)
 
     ax_agg.text(0, -0.6, "Aggregation (%)", fontsize=25, ha='left', va='bottom')
-    g_agg = sns.heatmap(res_agg_dict[BIOTYPES[0]], annot=True, cbar=True, vmin=0, vmax=agg_vmax, cbar_ax=ax_agg_cbar,
+    g_agg = sns.heatmap(res_agg_dict[__biotypes__[0]], annot=True, cbar=True, vmin=0, vmax=agg_vmax, cbar_ax=ax_agg_cbar,
                         cmap='Blues', ax=ax_agg, fmt='.5g')
-    ax_agg.set_title(BIOTYPES[0], **title_args)
+    ax_agg.set_title(__biotypes__[0], **title_args)
     ax_agg.set_xticklabels(ax_agg.get_xticklabels(), rotation=90)
     # do not set yticklabels to [], because that will affect GMTK parameters, as it's set to yshare
 

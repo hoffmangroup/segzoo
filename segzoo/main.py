@@ -6,7 +6,6 @@ from .version import __version__
 from os import path
 
 
-# TODO add build and species to the path of the output so that different runs in the same folder can be done
 def main(args=sys.argv[1:]):
     here = path.abspath(path.dirname(__file__))
     default_prefix = path.dirname(path.dirname(path.dirname(path.dirname(here))))
