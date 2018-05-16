@@ -91,6 +91,9 @@ MIX_FACTOR = 1.5
 AGG_FACTOR = 1
 ROW_CORRECTOR = 1
 
+LABEL_FONTSIZE = 20
+TITLE_FONTSIZE = 25
+
 sns.set(font_scale=1.5)
 
 # Color maps for the visualization
@@ -113,7 +116,7 @@ n_columns = GMTK_COL + MIX_COL + AGG_COL
 
 # Create grid with axes following the ratios desired for the dimensions
 f, (ax_gmtk, ax_mix, ax_agg) = \
-    plt.subplots(1, 3, figsize=(n_columns, n_rows), sharey=True, \
+    plt.subplots(1, 3, figsize=(n_columns, n_rows), \
                  gridspec_kw={"wspace": 3.6 / n_columns, "width_ratios": [GMTK_COL, MIX_COL, AGG_COL]})
 
 # GMTK parameters
@@ -121,10 +124,12 @@ if snakemake.config['parameters']:
     g_gmtk = sns.heatmap(res_gmtk, cmap=cmap_gmtk, cbar=True, vmin=0, vmax=1, ax=ax_gmtk)
     cbar_gmtk = g_gmtk.collections[0].colorbar
     cbar_gmtk.set_ticks([0, 1])
+    cbar_gmtk.ax.set_yticklabels([0, 1], fontsize=LABEL_FONTSIZE)
 
     # Setting titles and axis labels
-    ax_gmtk.set_yticklabels(ax_gmtk.get_yticklabels(), rotation=0)  # put label names horizontally
-    ax_gmtk.set_title('GMTK parameters', fontsize=25, position=(0, 1 + 0.6 / res_gmtk.shape[0]), ha='left', va='bottom')
+    ax_gmtk.set_yticklabels(ax_gmtk.get_yticklabels(), rotation=0, fontsize=LABEL_FONTSIZE)  # put label names horizontally
+    ax_gmtk.set_xticklabels(ax_gmtk.get_xticklabels(), rotation=90, fontsize=LABEL_FONTSIZE)
+    ax_gmtk.set_title('GMTK parameters', fontsize=TITLE_FONTSIZE, position=(0, 1 + 0.6 / res_gmtk.shape[0]), ha='left', va='bottom')
 else:
     f.delaxes(ax_gmtk)
 
@@ -132,12 +137,18 @@ else:
 g_mix = sns.heatmap(res_mix_hm, annot=res_mix_ann, cbar=True, cmap='YlGn', vmin=0, vmax=1, ax=ax_mix, fmt='.5g')
 cbar_mix = g_mix.collections[0].colorbar
 cbar_mix.set_ticks([0, 1])
-cbar_mix.set_ticklabels(['low', 'high'])
+cbar_mix.ax.set_yticklabels(['low', 'high'], fontsize=LABEL_FONTSIZE)
 ax_mix.set_ylabel('')
+ax_mix.set_xticklabels(ax_mix.get_xticklabels(), rotation=90, fontsize=LABEL_FONTSIZE)
+
+if snakemake.config['parameters']:
+    ax_mix.set_yticklabels([])
+else:
+    ax_mix.set_yticklabels(ax_mix.get_yticklabels(), rotation=0, fontsize=LABEL_FONTSIZE)
 
 # Aggregation
 divider = make_axes_locatable(ax_agg)
-title_args = dict(fontsize=20, position=(1.0, 1.0), ha='right', va='bottom')
+title_args = dict(fontsize=LABEL_FONTSIZE, position=(1.0, 1.0), ha='right', va='bottom')
 
 # Divide axes, plot heatmap and edit axis configuration for each biotype
 for biotype in __biotypes__[1:]:
@@ -146,22 +157,22 @@ for biotype in __biotypes__[1:]:
                 fmt='.5g')
     ax_agg_aux.set_title(biotype, **title_args)
     ax_agg_aux.set_yticklabels([])
-    ax_agg_aux.set_xticklabels(ax_agg_aux.get_xticklabels(), rotation=90)
+    ax_agg_aux.set_xticklabels(ax_agg_aux.get_xticklabels(), rotation=90, fontsize=LABEL_FONTSIZE)
 
 if len(__biotypes__) > 0:
     ax_agg_cbar = divider.append_axes("right", size=0.35, pad=0.3)
 
-    ax_agg.text(0, -0.6, "Aggregation (%)", fontsize=25, ha='left', va='bottom')
+    ax_agg.text(0, -0.6, "Aggregation", fontsize=TITLE_FONTSIZE, ha='left', va='bottom')
     g_agg = sns.heatmap(res_agg_dict[__biotypes__[0]], annot=True, cbar=True, vmin=0, vmax=agg_vmax, cbar_ax=ax_agg_cbar,
                         cmap='Blues', ax=ax_agg, fmt='.5g')
     ax_agg.set_title(__biotypes__[0], **title_args)
-    ax_agg.set_xticklabels(ax_agg.get_xticklabels(), rotation=90)
-    # do not set yticklabels to [], because that will affect GMTK parameters, as it's set to yshare
+    ax_agg.set_yticklabels([])
+    ax_agg.set_xticklabels(ax_agg.get_xticklabels(), rotation=90, fontsize=LABEL_FONTSIZE)
 
     # Edit the colorbar created by the first biotype
     cbar_agg = g_agg.collections[0].colorbar
     cbar_agg.set_ticks([0, agg_vmax])
-    cbar_agg.set_ticklabels(['0%', '{:.0f}%'.format(agg_vmax)])  # the format takes out decimals
+    cbar_agg.ax.set_yticklabels(['0%', '{:.0f}%'.format(agg_vmax)], fontsize=LABEL_FONTSIZE)  # the format takes out decimals
 else:
     f.delaxes(ax_agg)
 
