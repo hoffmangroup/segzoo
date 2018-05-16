@@ -85,7 +85,7 @@ rule create_gene_biotype_gtf:
 	output:
 		expand(join(BUILDPATH, recipeGTF, "gene_biotype", "{biotype}", "general", fileGTF), biotype=__biotypes__),
 		expand(join(BUILDPATH, recipeGTF, "gene_biotype", "{biotype}", "gene", fileGTF), biotype=__biotypes__),
-		join(OUTDIR, LOGS, "gene_biotype_stats")
+		stats=join(OUTDIR, LOGS, "gene_biotype_stats")
 	params:
 		outdir=join(BUILDPATH, recipeGTF, "gene_biotype"),
 		outfile=fileGTF

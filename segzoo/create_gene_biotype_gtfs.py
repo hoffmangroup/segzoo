@@ -39,7 +39,7 @@ for biotype, array in biotype_gene_dict.items():
     results_log_dict[biotype].append(len(array))
 
 # Write down the resulting files' sizes in a new file in the "logs" folder
-log_file = open(snakemake.log[0], 'w')
+log_file = open(snakemake.output.stats, 'w')
 log_file.write("gene biotype\tannotations\tgenes\n")
 for biotype, values in results_log_dict.items():
     log_file.write(biotype + "\t" + '{}'.format(values[0]) + "\t" + '{}'.format(values[1]) + "\n")
