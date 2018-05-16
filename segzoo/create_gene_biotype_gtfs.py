@@ -2,6 +2,7 @@ from pybedtools import BedTool
 from collections import defaultdict
 import os
 from os.path import join, exists
+from segzoo.gene_biotypes import __biotypes__
 
 GTF_GENE_FEATURE_INDEX = 2  # Position of the "feature" parameter in an interval (2 in GTF format)
 
@@ -17,23 +18,24 @@ for interval in gtf:
     # and this can lead to segtools crashing
     fields = interval.fields
     biotype = interval.attrs['gene_biotype']  # gene_type instead of gene_biotype in hg19
-    biotype_dict[biotype].append(fields)
-    if interval[GTF_GENE_FEATURE_INDEX] == 'gene':
-        biotype_gene_dict[biotype].append(fields)
+    if biotype in __biotypes__:
+        biotype_dict[biotype].append(fields)
+        if interval[GTF_GENE_FEATURE_INDEX] == 'gene':
+            biotype_gene_dict[biotype].append(fields)
 
 # Create all the files with all the intervals from each biotype, and add their sizes to the results log dictionary
 for biotype, array in biotype_dict.items():
-    if not exists(join(snakemake.params.outdir, "general", biotype)):
-        os.makedirs(join(snakemake.params.outdir, "general", biotype))
-    BedTool(array).moveto(join(snakemake.params.outdir, "general", biotype, snakemake.params.outfile))
+    if not exists(join(snakemake.params.outdir, biotype, "general")):
+        os.makedirs(join(snakemake.params.outdir, biotype, "general"))
+    BedTool(array).moveto(join(snakemake.params.outdir, biotype, "general", snakemake.params.outfile))
     results_log_dict[biotype].append(len(array))
 
 # Create the files with only the intervals that are genes from each biotype
 # and add their sizes to the results log dictionary
 for biotype, array in biotype_gene_dict.items():
-    if not exists(join(snakemake.params.outdir, "gene", biotype)):
-        os.makedirs(join(snakemake.params.outdir, "gene", biotype))
-    BedTool(array).moveto(join(snakemake.params.outdir, "gene", biotype, snakemake.params.outfile))
+    if not exists(join(snakemake.params.outdir, biotype, "gene")):
+        os.makedirs(join(snakemake.params.outdir, biotype, "gene"))
+    BedTool(array).moveto(join(snakemake.params.outdir, biotype, "gene", snakemake.params.outfile))
     results_log_dict[biotype].append(len(array))
 
 # Write down the resulting files' sizes in a new file in the "logs" folder

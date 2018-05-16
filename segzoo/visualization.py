@@ -147,6 +147,7 @@ else:
     ax_mix.set_yticklabels(ax_mix.get_yticklabels(), rotation=0, fontsize=LABEL_FONTSIZE)
 
 # Aggregation
+stats_df = pd.read_table(snakemake.input.stats, index_col=0)  # data stored when creating the gtf files
 divider = make_axes_locatable(ax_agg)
 title_args = dict(fontsize=LABEL_FONTSIZE, position=(1.0, 1.0), ha='right', va='bottom')
 
@@ -155,7 +156,7 @@ for biotype in __biotypes__[1:]:
     ax_agg_aux = divider.append_axes("right", size="100%", pad=0.3)
     sns.heatmap(res_agg_dict[biotype], annot=True, cbar=False, vmin=0, vmax=agg_vmax, cmap='Blues', ax=ax_agg_aux,
                 fmt='.5g')
-    ax_agg_aux.set_title(biotype, **title_args)
+    ax_agg_aux.set_title('{} ({})'.format(biotype, stats_df.loc[biotype, 'genes']), **title_args)
     ax_agg_aux.set_yticklabels([])
     ax_agg_aux.set_xticklabels(ax_agg_aux.get_xticklabels(), rotation=90, fontsize=LABEL_FONTSIZE)
 
@@ -165,7 +166,7 @@ if len(__biotypes__) > 0:
     ax_agg.text(0, -0.6, "Aggregation", fontsize=TITLE_FONTSIZE, ha='left', va='bottom')
     g_agg = sns.heatmap(res_agg_dict[__biotypes__[0]], annot=True, cbar=True, vmin=0, vmax=agg_vmax, cbar_ax=ax_agg_cbar,
                         cmap='Blues', ax=ax_agg, fmt='.5g')
-    ax_agg.set_title(__biotypes__[0], **title_args)
+    ax_agg.set_title('{} ({})'.format(__biotypes__[0], stats_df.loc[__biotypes__[0], 'genes']), **title_args)
     ax_agg.set_yticklabels([])
     ax_agg.set_xticklabels(ax_agg.get_xticklabels(), rotation=90, fontsize=LABEL_FONTSIZE)
 

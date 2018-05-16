@@ -1,6 +1,6 @@
 import os
 from os.path import join, splitext
-
+from segzoo.gene_biotypes import __biotypes__
 
 #OPTIONS
 QUIET = ""
@@ -24,25 +24,27 @@ BUILDPATH = join(PREFIX, "share", "ggd", SPECIES, BUILD)
 
 
 RESULTS = "results"
-RESULTFILE="results"
+RESULTFILE="results.tsv"
 DATA = "data"
 LOGS = "logs"
 PLOTS = "plots"
+PLOTFILE = "plot.png"
 
 preprocessed_segmentation = join(OUTDIR, DATA,"segmentation", "segmentation.pkl.gz")
 
 #Main rule that sets the targets to obtain
 rule all:
 	input:
-		# dynamic(join(OUTDIR, DATA, "feature_distance", "gene_biotype", "{biotype}", "feature_distance.tab" )),
+		# expand(join(OUTDIR, DATA, "feature_distance", "gene_biotype", "{biotype}", "feature_distance.tab"), biotype=__biotypes__),
 		# os.path.join(OUTDIR, DATA, "feature_distance", "general", "feature_distance.tab"),
 		len_dist=join(OUTDIR, RESULTS, "length_distribution", RESULTFILE),
 		nuc=join(OUTDIR, RESULTS, "nucleotide", RESULTFILE),
-		agg=join(OUTDIR, RESULTS, "aggregation", "general", RESULTFILE),
-		aggs=dynamic(join(OUTDIR, RESULTS, "aggregation", "gene_biotype", "{biotype}", RESULTFILE)),
+		# agg=join(OUTDIR, RESULTS, "aggregation", "general", RESULTFILE),
+		aggs=expand(join(OUTDIR, RESULTS, "aggregation", "gene_biotype", "{biotype}", RESULTFILE), biotype=__biotypes__),
+		stats=join(OUTDIR, LOGS, "gene_biotype_stats"),
 		gmtk=join(OUTDIR, RESULTS, "gmtk_parameters", RESULTFILE) if config['parameters'] else []
 	output:
-		outfile=join(OUTDIR, PLOTS, "plot.png")
+		outfile=join(OUTDIR, PLOTS, PLOTFILE)
 	script:
 		"visualization.py"
 
@@ -81,10 +83,9 @@ rule create_gene_biotype_gtf:
 	input:
 		gtf=join(BUILDPATH, recipeGTF, fileGTF)
 	output:
-		dynamic(join(BUILDPATH, recipeGTF, "gene_biotype", "general", "{biotype}", fileGTF)),
-		dynamic(join(BUILDPATH, recipeGTF, "gene_biotype", "gene", "{biotype}", fileGTF))
-	log:
-		join(OUTDIR, LOGS, "create_gene_biotype_gtfs")
+		expand(join(BUILDPATH, recipeGTF, "gene_biotype", "{biotype}", "general", fileGTF), biotype=__biotypes__),
+		expand(join(BUILDPATH, recipeGTF, "gene_biotype", "{biotype}", "gene", fileGTF), biotype=__biotypes__),
+		join(OUTDIR, LOGS, "gene_biotype_stats")
 	params:
 		outdir=join(BUILDPATH, recipeGTF, "gene_biotype"),
 		outfile=fileGTF
@@ -123,7 +124,7 @@ rule run_segtools_aggregation_general:
 rule run_segtools_aggregation_gene_biotype:
 	input:
 		preprocessed_segmentation,
-		gtf=join(BUILDPATH, recipeGTF, "gene_biotype", "general", "{biotype}", fileGTF)
+		gtf=join(BUILDPATH, recipeGTF, "gene_biotype", "{biotype}", "general", fileGTF)
 	output:
 		join(OUTDIR, DATA, "aggregation", "gene_biotype", "{biotype}", "feature_aggregation.tab")
 	params:
@@ -135,7 +136,7 @@ rule create_aggregation_results_general:
 	input:
 		infile=join(OUTDIR, DATA, "aggregation", "general", "feature_aggregation.tab")
 	output:
-		outfile=join(OUTDIR, RESULTS, "aggregation", "general", "results")
+		outfile=join(OUTDIR, RESULTS, "aggregation", "general", RESULTFILE)
 	script:
 		"create_aggregation_results.py"
 
@@ -143,7 +144,7 @@ rule create_aggregation_results_gene_biotype:
 	input:
 		infile=join(OUTDIR, DATA, "aggregation", "gene_biotype", "{biotype}", "feature_aggregation.tab")
 	output:
-		outfile=join(OUTDIR, RESULTS, "aggregation", "gene_biotype", "{biotype}", "results")
+		outfile=join(OUTDIR, RESULTS, "aggregation", "gene_biotype", "{biotype}", RESULTFILE)
 	script:
 		"create_aggregation_results.py"
 
@@ -155,7 +156,7 @@ rule run_segtools_length_distribution:
 		preprocessed_segmentation,
 	output:
 		join(OUTDIR, DATA, "length_distribution", "segment_sizes.tab"),
-		join(OUTDIR, RESULTS, "length_distribution", "results")
+		join(OUTDIR, RESULTS, "length_distribution", RESULTFILE)
 	params:
 		outdir=join(OUTDIR, DATA, "length_distribution")
 	shell:
@@ -179,7 +180,7 @@ rule run_segtools_feature_distance_general:
 rule run_segtools_feature_distance_gene_biotype:
 	input:
 		preprocessed_segmentation,
-		gtf=join(BUILDPATH, recipeGTF, "gene_biotype", "gene", "{biotype}", fileGTF)
+		gtf=join(BUILDPATH, recipeGTF, "gene_biotype", "{biotype}", "gene", fileGTF)
 	output:
 		join(OUTDIR, DATA, "feature_distance", "gene_biotype", "{biotype}", "feature_distance.tab"),
 		outfile=join(OUTDIR, DATA, "feature_distance", "gene_biotype", "{biotype}", "feature_distance_segments.tab")
@@ -203,7 +204,7 @@ rule create_nucleotide_results:
 	input:
 		infile=join(OUTDIR, DATA, "nucleotide", "bedtools_output")
 	output:
-		outfile=join(OUTDIR, RESULTS, "nucleotide", "results")
+		outfile=join(OUTDIR, RESULTS, "nucleotide", RESULTFILE)
 	script:
 		"create_nucleotide_results.py"
 
