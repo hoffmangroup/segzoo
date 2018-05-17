@@ -1,6 +1,6 @@
 import os
 from os.path import join, splitext
-from segzoo.gene_biotypes import __biotypes__
+from segzoo.gene_biotypes import BIOTYPES
 
 #OPTIONS
 QUIET = ""
@@ -26,7 +26,7 @@ BUILDPATH = join(PREFIX, "share", "ggd", SPECIES, BUILD)
 RESULTS = "results"
 RESULTFILE="results.tsv"
 DATA = "data"
-LOGS = "logs"
+# LOGS = "logs"
 PLOTS = "plots"
 PLOTFILE = "plot.png"
 
@@ -40,8 +40,8 @@ rule all:
 		len_dist=join(OUTDIR, RESULTS, "length_distribution", RESULTFILE),
 		nuc=join(OUTDIR, RESULTS, "nucleotide", RESULTFILE),
 		# agg=join(OUTDIR, RESULTS, "aggregation", "general", RESULTFILE),
-		aggs=expand(join(OUTDIR, RESULTS, "aggregation", "gene_biotype", "{biotype}", RESULTFILE), biotype=__biotypes__),
-		stats=join(OUTDIR, LOGS, "gene_biotype_stats"),
+		aggs=expand(join(OUTDIR, RESULTS, "aggregation", "gene_biotype", "{biotype}", RESULTFILE), biotype=BIOTYPES),
+		stats=join(BUILDPATH, recipeGTF, "gene_biotype", "gene_biotype_stats"),
 		gmtk=join(OUTDIR, RESULTS, "gmtk_parameters", RESULTFILE) if config['parameters'] else []
 	output:
 		outfile=join(OUTDIR, PLOTS, PLOTFILE)
@@ -83,9 +83,9 @@ rule create_gene_biotype_gtf:
 	input:
 		gtf=join(BUILDPATH, recipeGTF, fileGTF)
 	output:
-		expand(join(BUILDPATH, recipeGTF, "gene_biotype", "{biotype}", "general", fileGTF), biotype=__biotypes__),
-		expand(join(BUILDPATH, recipeGTF, "gene_biotype", "{biotype}", "gene", fileGTF), biotype=__biotypes__),
-		stats=join(OUTDIR, LOGS, "gene_biotype_stats")
+		expand(join(BUILDPATH, recipeGTF, "gene_biotype", "{biotype}", "general", fileGTF), biotype=BIOTYPES),
+		expand(join(BUILDPATH, recipeGTF, "gene_biotype", "{biotype}", "gene", fileGTF), biotype=BIOTYPES),
+		stats=join(BUILDPATH, recipeGTF, "gene_biotype", "gene_biotype_stats")
 	params:
 		outdir=join(BUILDPATH, recipeGTF, "gene_biotype"),
 		outfile=fileGTF

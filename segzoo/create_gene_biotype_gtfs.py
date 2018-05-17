@@ -2,7 +2,7 @@ from pybedtools import BedTool
 from collections import defaultdict
 import os
 from os.path import join, exists
-from segzoo.gene_biotypes import __biotypes__
+from segzoo.gene_biotypes import BIOTYPES
 
 GTF_GENE_FEATURE_INDEX = 2  # Position of the "feature" parameter in an interval (2 in GTF format)
 
@@ -39,7 +39,7 @@ for biotype, array in biotype_gene_dict.items():
     BedTool(array).moveto(join(snakemake.params.outdir, biotype, "gene", snakemake.params.outfile))
     results_log_dict[biotype].append(len(array))
 
-# Write down the resulting files' sizes in a new file in the "logs" folder
+# Write down the resulting files' sizes in a new file in the ggd directory .../gene_biotype/file
 log_file = open(snakemake.output.stats, 'w')
 log_file.write("gene biotype\tannotations\tgenes\n")
 for biotype, values in results_log_dict.items():

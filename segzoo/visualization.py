@@ -6,7 +6,7 @@ from collections import defaultdict
 from os import path
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from segzoo.gene_biotypes import __biotypes__
+from segzoo.gene_biotypes import BIOTYPES
 
 # Prepare the gmtk parameters in a DataFrame
 def gmtk_parameters():
@@ -73,7 +73,7 @@ def aggregation():
 
     df_dict = defaultdict()
     max_value = 0
-    for biotype in __biotypes__:
+    for biotype in BIOTYPES:
         filename = next(x for x in snakemake.input.aggs if path.basename(path.dirname(x)) == biotype)
         biotype_df = pd.read_table(filename, index_col=0).apply(to_percent, axis=1).fillna(0)
         biotype_df.columns = COLUMN_NAMES
@@ -109,7 +109,7 @@ res_agg_dict, agg_vmax = aggregation()
 
 GMTK_COL = res_gmtk.shape[1] * GMTK_FACTOR + 1
 MIX_COL = res_mix_hm.shape[1] * MIX_FACTOR + 1
-AGG_COL = len(__biotypes__) * NUM_COMPONENTS * AGG_FACTOR + 1
+AGG_COL = len(BIOTYPES) * NUM_COMPONENTS * AGG_FACTOR + 1
 
 n_rows = res_mix_hm.shape[0] * ROW_CORRECTOR
 n_columns = GMTK_COL + MIX_COL + AGG_COL
@@ -152,7 +152,7 @@ divider = make_axes_locatable(ax_agg)
 title_args = dict(fontsize=LABEL_FONTSIZE, position=(1.0, 1.0), ha='right', va='bottom')
 
 # Divide axes, plot heatmap and edit axis configuration for each biotype
-for biotype in __biotypes__[1:]:
+for biotype in BIOTYPES[1:]:
     ax_agg_aux = divider.append_axes("right", size="100%", pad=0.3)
     sns.heatmap(res_agg_dict[biotype], annot=True, cbar=False, vmin=0, vmax=agg_vmax, cmap='Blues', ax=ax_agg_aux,
                 fmt='.5g')
@@ -160,13 +160,13 @@ for biotype in __biotypes__[1:]:
     ax_agg_aux.set_yticklabels([])
     ax_agg_aux.set_xticklabels(ax_agg_aux.get_xticklabels(), rotation=90, fontsize=LABEL_FONTSIZE)
 
-if len(__biotypes__) > 0:
+if len(BIOTYPES) > 0:
     ax_agg_cbar = divider.append_axes("right", size=0.35, pad=0.3)
 
     ax_agg.text(0, -0.6, "Aggregation", fontsize=TITLE_FONTSIZE, ha='left', va='bottom')
-    g_agg = sns.heatmap(res_agg_dict[__biotypes__[0]], annot=True, cbar=True, vmin=0, vmax=agg_vmax, cbar_ax=ax_agg_cbar,
+    g_agg = sns.heatmap(res_agg_dict[BIOTYPES[0]], annot=True, cbar=True, vmin=0, vmax=agg_vmax, cbar_ax=ax_agg_cbar,
                         cmap='Blues', ax=ax_agg, fmt='.5g')
-    ax_agg.set_title('{} ({})'.format(__biotypes__[0], stats_df.loc[__biotypes__[0], 'genes']), **title_args)
+    ax_agg.set_title('{} ({})'.format(BIOTYPES[0], stats_df.loc[BIOTYPES[0], 'genes']), **title_args)
     ax_agg.set_yticklabels([])
     ax_agg.set_xticklabels(ax_agg.get_xticklabels(), rotation=90, fontsize=LABEL_FONTSIZE)
 
