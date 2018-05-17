@@ -18,10 +18,11 @@ for interval in gtf:
     # and this can lead to segtools crashing
     fields = interval.fields
     biotype = interval.attrs['gene_biotype']  # gene_type instead of gene_biotype in hg19
-    if biotype in __biotypes__:
-        biotype_dict[biotype].append(fields)
-        if interval[GTF_GENE_FEATURE_INDEX] == 'gene':
-            biotype_gene_dict[biotype].append(fields)
+    # if biotype in __biotypes__:
+    # It's best to create already all the files for future runs, because it's this loop that takes time to run
+    biotype_dict[biotype].append(fields)
+    if interval[GTF_GENE_FEATURE_INDEX] == 'gene':
+        biotype_gene_dict[biotype].append(fields)
 
 # Create all the files with all the intervals from each biotype, and add their sizes to the results log dictionary
 for biotype, array in biotype_dict.items():
