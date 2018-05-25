@@ -45,5 +45,5 @@ for biotype, intervals in biotype_gene_dict.items():
 log_file = open(snakemake.output.stats, 'w')
 log_file.write("gene biotype\tannotations\tgenes\n")
 for biotype, values in results_log_dict.items():
-    log_file.write(biotype + "\t" + '{}'.format(values[0]) + "\t" + '{}'.format(values[1]) + "\n")
+    log_file.write('{}\t{}\t{}\n'.format(biotype, values[0], values[1]))
 log_file.close()
