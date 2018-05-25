@@ -23,6 +23,7 @@ After accepting all installations, segzoo will be good to go!
 ## How to use
 
 To access the help to know how to run segzoo you can run `segzoo -h` or `segzoo --help`. Here's a look at all possible arguments:
+
 - `--version` to check the current version of segzoo
 - `--parameters` to specify a params.params file resulting from segway's training to obtain GMTK parameters in the final visualization. If not specified, GMTK parameters won't show in the final visualization
 - `--prefix` to specify where you want all needed data (like the genome assembly) to be downloaded (default: the installation environment's directory)
@@ -47,7 +48,7 @@ Finally, the visualization will be in the **plots** directory. It will look some
 
 The y-axis are the labels of the segmentation for all the heatmaps.
 
-###Notes
+### Notes
 - The *mix* table (the second one to the left) has each column normalized so that the maximum and minimum values are the limits of the heatmap. This applies to all but the GC content, which is normalized between 0.35 and 0.65. All this information will be displayed in the near future in a table.
 - The aggregation tables are shown in the same order as specified in `gene_biotypes.py`, and can contain duplicates.
 - The aggregation results displayed are the percentage of aggregations in one component in comparison to all the gene biotype, so notice that each row adds up to 100.
