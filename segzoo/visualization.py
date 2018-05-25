@@ -156,7 +156,7 @@ for biotype in BIOTYPES[1:]:
     ax_agg_aux = divider.append_axes("right", size="100%", pad=0.3)
     sns.heatmap(res_agg_dict[biotype], annot=True, cbar=False, vmin=0, vmax=agg_vmax, cmap='Blues', ax=ax_agg_aux,
                 fmt='.5g')
-    ax_agg_aux.set_title('{} ({})'.format(biotype, stats_df.loc[biotype, 'genes']), **title_args)
+    ax_agg_aux.set_title('{} (n={})'.format(biotype, stats_df.loc[biotype, 'genes']), **title_args)
     ax_agg_aux.set_yticklabels([])
     ax_agg_aux.set_xticklabels(ax_agg_aux.get_xticklabels(), rotation=90, fontsize=LABEL_FONTSIZE)
 
@@ -166,7 +166,7 @@ if len(BIOTYPES) > 0:
     ax_agg.text(0, -0.6, "Aggregation", fontsize=TITLE_FONTSIZE, ha='left', va='bottom')
     g_agg = sns.heatmap(res_agg_dict[BIOTYPES[0]], annot=True, cbar=True, vmin=0, vmax=agg_vmax, cbar_ax=ax_agg_cbar,
                         cmap='Blues', ax=ax_agg, fmt='.5g')
-    ax_agg.set_title('{} ({})'.format(BIOTYPES[0], stats_df.loc[BIOTYPES[0], 'genes']), **title_args)
+    ax_agg.set_title('{} (n={})'.format(BIOTYPES[0], stats_df.loc[BIOTYPES[0], 'genes']), **title_args)
     ax_agg.set_yticklabels([])
     ax_agg.set_xticklabels(ax_agg.get_xticklabels(), rotation=90, fontsize=LABEL_FONTSIZE)
 

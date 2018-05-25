@@ -20,24 +20,26 @@ for interval in gtf:
     biotype = interval.attrs['gene_biotype']  # gene_type instead of gene_biotype in hg19
     # if biotype in __biotypes__:
     # It's best to create already all the files for future runs, because it's this loop that takes time to run
+    if not interval.chrom.startswith('chr'):
+        continue
     biotype_dict[biotype].append(fields)
     if interval[GTF_GENE_FEATURE_INDEX] == 'gene':
         biotype_gene_dict[biotype].append(fields)
 
 # Create all the files with all the intervals from each biotype, and add their sizes to the results log dictionary
-for biotype, array in biotype_dict.items():
+for biotype, intervals in biotype_dict.items():
     if not exists(join(snakemake.params.outdir, biotype, "general")):
         os.makedirs(join(snakemake.params.outdir, biotype, "general"))
-    BedTool(array).moveto(join(snakemake.params.outdir, biotype, "general", snakemake.params.outfile))
-    results_log_dict[biotype].append(len(array))
+    BedTool(intervals).saveas(join(snakemake.params.outdir, biotype, "general", snakemake.params.outfile))
+    results_log_dict[biotype].append(len(intervals))
 
 # Create the files with only the intervals that are genes from each biotype
 # and add their sizes to the results log dictionary
-for biotype, array in biotype_gene_dict.items():
+for biotype, intervals in biotype_gene_dict.items():
     if not exists(join(snakemake.params.outdir, biotype, "gene")):
         os.makedirs(join(snakemake.params.outdir, biotype, "gene"))
-    BedTool(array).moveto(join(snakemake.params.outdir, biotype, "gene", snakemake.params.outfile))
-    results_log_dict[biotype].append(len(array))
+    BedTool(intervals).saveas(join(snakemake.params.outdir, biotype, "gene", snakemake.params.outfile))
+    results_log_dict[biotype].append(len(intervals))
 
 # Write down the resulting files' sizes in a new file in the ggd directory .../gene_biotype/file
 log_file = open(snakemake.output.stats, 'w')
