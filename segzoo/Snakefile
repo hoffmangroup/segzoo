@@ -17,7 +17,7 @@ BUILD = config['build']  # "hg38"
 recipeGTF = "rnaseq"
 recipeSEQ = "sequence"
 
-fileGTF = BUILD + ".gtf"
+fileGTF = BUILD + ".gtf.gz"
 fileSEQ = BUILD + ".fa"
 
 BUILDPATH = join(PREFIX, "share", "ggd", SPECIES, BUILD)
@@ -55,8 +55,11 @@ rule download_ggd_annotation:
 	input:
 	output:
 		join(BUILDPATH, recipeGTF, fileGTF)
+	params:
+		inter=join(BUILDPATH, recipeGTF, BUILD + ".gtf")
 	shell:
-		"conda install -p {PREFIX} -y {QUIET} {CLOBBER} -c ggd-alpha {BUILD}-gtf"
+		"conda install -p {PREFIX} -y {QUIET} {CLOBBER} -c ggd-alpha {BUILD}-gtf;"
+		"gzip {params.inter}"
 
 rule download_ggd_sequence:
 	input:
