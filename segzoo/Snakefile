@@ -24,7 +24,7 @@ BUILDPATH = join(PREFIX, "share", "ggd", SPECIES, BUILD)
 
 
 RESULTS = "results"
-RESULTFILE="results.tsv"
+RESULTFILE = "results.tsv"
 DATA = "data"
 # LOGS = "logs"
 PLOTS = "plots"
