@@ -1,6 +1,10 @@
 # import pandas as pd
-import seaborn as sns
+import matplotlib as mpl
+mpl.use('Agg')
+
 import pandas as pd
+import seaborn as sns
+
 import matplotlib.pyplot as plt
 
 from collections import defaultdict
@@ -20,7 +24,7 @@ AGG_FACTOR = 1
 ROW_CORRECTOR = 1
 
 # Font scaling variables
-FONT_SCALE = 2
+FONT_SCALE = 1.5
 sns.set(font_scale=FONT_SCALE)
 # sns.set_context("poster")
 LABEL_FONTSIZE = 20 * FONT_SCALE / 1.5

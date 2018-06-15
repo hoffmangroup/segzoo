@@ -32,5 +32,5 @@ def main(args=sys.argv[1:]):
 
     parsed_args = parser.parse_args(args)
 
-    snakemake.snakemake(path.join(here, "Snakefile"), cores=parsed_args.j, config=vars(parsed_args))
+    snakemake.snakemake(path.join(here, "Snakefile"), cores=parsed_args.j, config=vars(parsed_args), printreason=True)
     # dryrun=True, printshellcmds=True, printreason=True)
