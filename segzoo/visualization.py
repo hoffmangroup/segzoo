@@ -33,8 +33,8 @@ TITLE_FONTSIZE = 25 * FONT_SCALE / 1.5
 # Table options and properties
 TABLE_POS = "bottom"  # top / bottom / other to ommit
 TABLE_HEIGHT = 1  # relative to the height of 2 rows from the mix matrix
-TABLE_CONTENT = [['max', 'max', 'max', 'max', 'max', 0.65],
-                 ['min', 'min', 'min', 'min', 'min', 0.35]]
+TABLE_CONTENT = [['max', 'max', 'max', 'max', 'max', 65],
+                 ['min', 'min', 'min', 'min', 'min', 35]]
 
 # Color maps for the visualization
 cmap_gmtk = sns.diverging_palette(220, 10, as_cmap=True)
@@ -55,10 +55,10 @@ def nucleotide():
     res_nuc_ann = res_nuc_ann.rename('GC content (%)')
 
     # Interpolation of the parameters to rescale them between vmin and vmax for the heatmap
-    vmax = 0.65
-    vmin = 0.35
+    vmax = 65
+    vmin = 35
     res_nuc_hm = res_nuc_ann.copy()
-    res_nuc_hm = ((res_nuc_hm / 100 - vmin) / (vmax - vmin)).clip(0, 1)
+    res_nuc_hm = ((res_nuc_hm - vmin) / (vmax - vmin)).clip(0, 1)
 
     return res_nuc_hm, res_nuc_ann
 

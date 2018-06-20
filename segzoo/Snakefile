@@ -32,7 +32,7 @@ PLOTFILE = "plot.png"
 
 preprocessed_segmentation = join(OUTDIR, DATA,"segmentation", "segmentation.pkl.gz")
 
-#Main rule that sets the targets to obtain
+# Main rule that sets the targets to obtain
 rule all:
 	input:
 		# expand(join(OUTDIR, DATA, "feature_distance", "gene_biotype", "{biotype}", "feature_distance.tab"), biotype=__biotypes__),
@@ -48,8 +48,14 @@ rule all:
 	script:
 		"visualization.py"
 
-#DOWNLOADING RULES
-#GGD conda installations into the anaconda environment folder
+# DOWNLOADING RULES
+# GGD conda installations into the anaconda environment folder
+rule download_targets:
+	input:
+		join(BUILDPATH, recipeGTF, fileGTF),  # output for the annotation
+		join(BUILDPATH, recipeSEQ, fileSEQ),  # output for the sequence
+		join(BUILDPATH, recipeGTF, "gene_biotype", "gene_biotype_stats")  # gene biotype separation output
+
 	
 rule download_ggd_annotation:
 	input:
@@ -68,20 +74,20 @@ rule download_ggd_sequence:
 	shell:
 		"conda install -p {PREFIX} -y {QUIET} {CLOBBER} -c ggd-alpha {BUILD}-sequence"
 
-#PREPROCESSING RULES
+# PREPROCESSING RULES
 
-#Preprocess segway annotation for future faster pasing
+# Preprocess segway annotation for future faster pasing
 rule run_segtools_preprocess:
 	input:
 		SEGMENTATION
 	output:
 		preprocessed_segmentation
 	params:
-		outfile=splitext(splitext(preprocessed_segmentation)[0])[0] # segtools-preprocess automatically adds the extensions
+		outfile=splitext(splitext(preprocessed_segmentation)[0])[0]  # segtools-preprocess automatically adds the extensions
 	shell:
 		"segtools-preprocess {QUIET} {CLOBBER} {SEGMENTATION} {params.outfile}"
 
-#Parse the main gtf file to create one file per each gene biotype (uses pybedtools)
+# Parse the main gtf file to create one file per each gene biotype (uses pybedtools)
 rule create_gene_biotype_gtf:
 	input:
 		gtf=join(BUILDPATH, recipeGTF, fileGTF)
@@ -96,9 +102,9 @@ rule create_gene_biotype_gtf:
 		"create_gene_biotype_gtfs.py"
 
 
-#ANALYZING RULES
+# ANALYZING RULES
 
-#Segtools GMTK-Parameters execution
+# Segtools GMTK-Parameters execution
 rule run_segtools_gmtk_parameters:
 	input:
 		GMTK_PARAMS
@@ -112,7 +118,7 @@ rule run_segtools_gmtk_parameters:
 		"cp {output.csv} {output.result}" # TODO PLOT is necessary to obtain .csv and no variance is available
 
 
-#Segtools Aggregation results obtention, general and by gene_biotype
+# Segtools Aggregation results obtention, general and by gene_biotype
 rule run_segtools_aggregation_general:
 	input:
 		preprocessed_segmentation,
@@ -152,7 +158,7 @@ rule create_aggregation_results_gene_biotype:
 		"create_aggregation_results.py"
 
 
-#Segtools Length Distribution execution and results creation
+# Segtools Length Distribution execution and results creation
 #TODO Don't just copy, preprocess for easier obtention of results
 rule run_segtools_length_distribution:
 	input:
@@ -167,7 +173,7 @@ rule run_segtools_length_distribution:
 		"cp {output[0]} {output[1]}"
 
 
-#Segtools Feature Distance execution for general file and gene_biotype
+# Segtools Feature Distance execution for general file and gene_biotype
 rule run_segtools_feature_distance_general:
 	input:
 		preprocessed_segmentation,
@@ -193,7 +199,7 @@ rule run_segtools_feature_distance_gene_biotype:
 		"segtools-feature-distance {QUIET} {CLOBBER} {NOPLOT} --outdir {params.outdir} {preprocessed_segmentation} {input.gtf} > {output.outfile}"
 
 
-#Bedtools nucleotide results obtention
+# Bedtools nucleotide results obtention
 rule run_bedtools_nuc:
 	input:
 		SEGMENTATION,

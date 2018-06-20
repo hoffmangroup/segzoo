@@ -19,6 +19,7 @@ def main(args=sys.argv[1:]):
     '''
 
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
     parser.add_argument('--version', action='version', version=__version__)
     parser.add_argument('segmentation', help='.bed.gz file, the segmentation/annotation output from Segway')
     parser.add_argument('--parameters', default=False,
@@ -28,9 +29,16 @@ def main(args=sys.argv[1:]):
     parser.add_argument('--species', default='Homo_sapiens', help='Species of the genome used for the segmentation')
     parser.add_argument('--build', default='hg38', help='Build of the genome assembly used for the segmentation')
     parser.add_argument('--prefix', default=default_prefix,
-                        help='Prefix where all the GGD data is going to be downloaded, followed by /share/ggd/SPECIES/BUILD')
+                        help='Prefix where all the external data is going to be downloaded, followed by /share/ggd/SPECIES/BUILD')
+    parser.add_argument('--download-only', action='store_true',
+                        help='Execute only the rules that need internet connection, which store data in a shared directory')
 
     parsed_args = parser.parse_args(args)
 
-    snakemake.snakemake(path.join(here, "Snakefile"), cores=parsed_args.j, config=vars(parsed_args), printreason=True)
-    # dryrun=True, printshellcmds=True, printreason=True)
+    if parsed_args.download_only:
+        snakemake.snakemake(path.join(here, "Snakefile"), targets=["download_targets"], cores=parsed_args.j, config=vars(parsed_args))
+
+    else:
+        snakemake.snakemake(path.join(here, "Snakefile"), cores=parsed_args.j, config=vars(parsed_args))
+
+    # printreason=True, dryrun=True, printshellcmds=True)
