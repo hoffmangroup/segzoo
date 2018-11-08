@@ -22,7 +22,6 @@ fileSEQ = BUILD + ".fa"
 
 BUILDPATH = join(PREFIX, "share", "ggd", SPECIES, BUILD)
 
-
 RESULTS = "results"
 RESULTFILE = "results.tsv"
 DATA = "data"
@@ -109,13 +108,9 @@ rule run_segtools_gmtk_parameters:
 	input:
 		GMTK_PARAMS
 	output:
-		csv=join(OUTDIR, DATA, "gmtk_parameters", "gmtk_parameters.stats.csv"),
-		result=join(OUTDIR, RESULTS, "gmtk_parameters", RESULTFILE)
-	params:
-		outdir=join(OUTDIR, DATA, "gmtk_parameters")
-	shell:
-		"segtools-gmtk-parameters {QUIET} {CLOBBER} --outdir {params.outdir} {GMTK_PARAMS};"
-		"cp {output.csv} {output.result}" # TODO PLOT is necessary to obtain .csv and no variance is available
+		join(OUTDIR, RESULTS, "gmtk_parameters", RESULTFILE)
+	script:
+		"create_gmtk_results.py"
 
 
 # Segtools Aggregation results obtention, general and by gene_biotype
