@@ -176,6 +176,27 @@ def aggregation():
     return df_dict, max_value
 
 
+def get_mne_ticklabels(filename, track_labels=[], label_labels=[]):
+    """Parse mne file and return updated tracks and labels"""
+
+    mne_df = pd.read_table(filename)
+    assert all(col in ['type', 'old', 'new'] for col in mne_df.columns)
+
+    track_df = mne_df[mne_df.type == 'track']
+    track_translator = dict(zip(track_df.old, track_df.new))
+    track_labels = map(str, track_labels)
+    new_tracks = [track_translator.get(old, old)
+                  for old in track_labels]
+
+    label_df = mne_df[mne_df.type == 'label']
+    label_translator = dict(zip(label_df.old, label_df.new))
+    label_labels = map(str, label_labels)
+    new_labels = [label_translator.get(old, old)
+                  for old in label_labels]
+
+    return new_tracks, new_labels
+
+
 if __name__ == '__main__':
     # Call the functions that obtain the results in DataFrames
     if snakemake.config['parameters']:
@@ -195,20 +216,28 @@ if __name__ == '__main__':
 
     # Create grid with axes following the ratios desired for the dimensions
     f, (ax_gmtk, ax_mix, ax_agg) = \
-        plt.subplots(1, 3, figsize=(n_columns, n_rows), \
+        plt.subplots(1, 3, figsize=(n_columns, n_rows),
                      gridspec_kw={"wspace": 3.6 / n_columns, "width_ratios": [GMTK_COL, MIX_COL, AGG_COL]})
+
+    # Read labels from mne file
+    if snakemake.config['mne'] and not res_gmtk.empty:
+        new_tracks, new_labels = get_mne_ticklabels(snakemake.config['mne'], res_gmtk.columns, res_mix_hm.index)
+    elif snakemake.config['mne']:
+        new_tracks, new_labels = get_mne_ticklabels(snakemake.config['mne'], [], res_mix_hm.index)
+    else:
+        new_tracks, new_labels = (res_gmtk.columns, res_mix_hm.index)
+
 
     # GMTK parameters
     if snakemake.config['parameters']:
-        g_gmtk = sns.heatmap(res_gmtk, cmap=cmap_gmtk, ax=ax_gmtk)  # , vmin=0, vmax=1, cbar=True,
+        g_gmtk = sns.heatmap(res_gmtk, cmap=cmap_gmtk, ax=ax_gmtk)
         cbar_gmtk = g_gmtk.collections[0].colorbar
-        # cbar_gmtk.set_ticks([0, 1])
-        # cbar_gmtk.ax.set_yticklabels([0, 1], fontsize=LABEL_FONTSIZE)
+        cbar_gmtk.ax.set_yticklabels(cbar_gmtk.ax.get_yticklabels(), fontsize=LABEL_FONTSIZE)
 
         # Setting titles and axis labels
-        ax_gmtk.set_yticklabels(ax_gmtk.get_yticklabels(), rotation=0,
+        ax_gmtk.set_yticklabels(new_labels, rotation=0,
                                 fontsize=LABEL_FONTSIZE)  # put label names horizontally
-        ax_gmtk.set_xticklabels(ax_gmtk.get_xticklabels(), rotation=90, fontsize=LABEL_FONTSIZE)
+        ax_gmtk.set_xticklabels(new_tracks, rotation=90, fontsize=LABEL_FONTSIZE)
         ax_gmtk.set_title('GMTK parameters',
                           fontsize=TITLE_FONTSIZE,
                           position=(0, 1 + 0.6 / res_gmtk.shape[0] * FONT_SCALE / 1.5),
@@ -228,7 +257,7 @@ if __name__ == '__main__':
     if snakemake.config['parameters']:
         ax_mix.set_yticklabels([])
     else:
-        ax_mix.set_yticklabels(ax_mix.get_yticklabels(), rotation=0, fontsize=LABEL_FONTSIZE)
+        ax_mix.set_yticklabels(new_labels, rotation=0, fontsize=LABEL_FONTSIZE)
 
     # Add min-max table
     mix_columns = res_mix_hm.shape[1]
