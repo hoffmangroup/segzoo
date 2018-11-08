@@ -32,6 +32,7 @@ def main(args=sys.argv[1:]):
                         help='Prefix where all the external data is going to be downloaded, followed by /share/ggd/SPECIES/BUILD')
     parser.add_argument('--download-only', action='store_true',
                         help='Execute only the rules that need internet connection, which store data in a shared directory')
+    parser.add_argument('--mne', help='.bed.gz file, the segmentation/annotation output from Segway')
 
     parsed_args = parser.parse_args(args)
 

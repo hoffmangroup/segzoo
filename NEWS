@@ -1,5 +1,6 @@
 1.0.5:
 * create gmtk-parameter heatmap from params.params or input.master
+* add mne parameter to change track and segment label labels
 
 1.0.4:
 * init

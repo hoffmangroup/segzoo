@@ -1,4 +1,3 @@
-import os
 from os.path import join, splitext
 from segzoo.gene_biotypes import BIOTYPES
 
@@ -7,8 +6,10 @@ QUIET = ""
 CLOBBER = "--clobber"
 NOPLOT = "--noplot"
 OUTDIR = config['outdir']
-SEGMENTATION = config['segmentation']
+SEGMENTATION = config["segmentation"]
+# TODO: try to set default values in argparse instead of using inline if/else
 GMTK_PARAMS = config["parameters"] if config["parameters"] else []
+MNE_FILENAME = config['mne'] if config['mne'] else []
 
 PREFIX = config["prefix"]  # "anaconda_path/envs/your_env/"
 SPECIES = config['species']  # "Homo_sapiens"
@@ -34,13 +35,11 @@ preprocessed_segmentation = join(OUTDIR, DATA,"segmentation", "segmentation.pkl.
 # Main rule that sets the targets to obtain
 rule all:
 	input:
-		# expand(join(OUTDIR, DATA, "feature_distance", "gene_biotype", "{biotype}", "feature_distance.tab"), biotype=__biotypes__),
-		# os.path.join(OUTDIR, DATA, "feature_distance", "general", "feature_distance.tab"),
 		len_dist=join(OUTDIR, RESULTS, "length_distribution", RESULTFILE),
 		nuc=join(OUTDIR, RESULTS, "nucleotide", RESULTFILE),
-		# agg=join(OUTDIR, RESULTS, "aggregation", "general", RESULTFILE),
 		aggs=expand(join(OUTDIR, RESULTS, "aggregation", "gene_biotype", "{biotype}", RESULTFILE), biotype=BIOTYPES),
 		stats=join(BUILDPATH, recipeGTF, "gene_biotype", "gene_biotype_stats"),
+        mne=MNE_FILENAME,
 		gmtk=join(OUTDIR, RESULTS, "gmtk_parameters", RESULTFILE) if config['parameters'] else []
 	output:
 		outfile=join(OUTDIR, PLOTS, PLOTFILE)

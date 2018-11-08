@@ -45,6 +45,8 @@ To access the help to know how to run segzoo you can run `segzoo -h` or `segzoo 
 - `-j` to specify the number of cores to use (default: 1)
 - `--species` and `--build` specify the species and the build for which the segmentation was created (default: Homo_sapiens and hg38)
 - `--download-only` is an option to support cluster use. Running Segzoo using this argument will only run the downloading rules of the pipeline, and store the data in using the specified prefix. After that, runs on nodes without internet access can be done by specifying that same prefix
+- `--mne` allows specify an `mne` file to translate segment labels and track names on the shown
+ on the figure. see `Using mne files` section for details.
 
 If you are interested in obtaining information on different gene biotypes than *protein coding and lincRNA*, which are the default,
 you can get to the installation folder of segzoo and modify the file `gene_biotypes.py` as you wish.
@@ -70,3 +72,23 @@ This applies to all but the GC content, which is normalized between 35% and 65% 
 - The aggregation tables are shown in the same order as specified in `gene_biotypes.py`, and can contain duplicates
 - The aggregation results displayed for each label are the percentage of counts in one component in comparison to all the idealized gene, so notice that each row adds up to 100
 - The number of genes found for each biotype shown is specified after the biotype's name
+
+## Using mne files
+
+The `mne` file can be used to translate segment labels and track names in the final figure.
+The file is tab delimited and should contain three columns in any order. Each row represent a translation rules. The columns are defined as follow:
+- `old`: the orginal label or track name that you can see from running `segzoo` with default parameters. The values in this column will be the keys in a python dict or look up table. 
+- `new`: replace the `old` value by the `new` value from this column. 
+- `type`: indicates whether the row should be used to translate a track or a label. It is specifically useful when tracks and labels have the same `old` name.
+
+The file header is mandatory and should contain the three fields listed above: old, new and type.
+Note that only the tracks and labels defined in the `mne` file will be updated. Specifically, it is possible to define more rows than needed in order to reuse the same files for different projects. The tracks and labels that are not defined in the `mne` files will remain unchanged.
+
+Example of `mne` file:
+
+```csv
+old	new	type
+0	Quiescent	label
+1	TSS	label
+H3K4me3_robust_peaks	H3K4me3	track
+```
