@@ -101,7 +101,7 @@ def human_format(num):
 
 # Prepare the gmtk parameters in a DataFrame
 def gmtk_parameters():
-    return pd.read_csv(snakemake.input.gmtk, index_col=0)
+    return pd.read_table(snakemake.input.gmtk, index_col=0)
 
 
 # Prepare nucleotide results in a Series format
