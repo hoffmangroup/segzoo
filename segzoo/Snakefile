@@ -1,5 +1,5 @@
 from os.path import join, splitext
-from segzoo.gene_biotypes import BIOTYPES
+from segzoo.script.gene_biotypes import BIOTYPES
 
 #OPTIONS
 QUIET = ""
@@ -7,9 +7,8 @@ CLOBBER = "--clobber"
 NOPLOT = "--noplot"
 OUTDIR = config['outdir']
 SEGMENTATION = config["segmentation"]
-# TODO: try to set default values in argparse instead of using inline if/else
-GMTK_PARAMS = config["parameters"] if config["parameters"] else []
-MNE_FILENAME = config['mne'] if config['mne'] else []
+GMTK_PARAMS = config["parameters"]
+MNE_FILENAME = config['mne']
 
 PREFIX = config["prefix"]  # "anaconda_path/envs/your_env/"
 SPECIES = config['species']  # "Homo_sapiens"
@@ -22,6 +21,7 @@ fileGTF = BUILD + ".gtf.gz"
 fileSEQ = BUILD + ".fa"
 
 BUILDPATH = join(PREFIX, "share", "ggd", SPECIES, BUILD)
+SCRIPT_PATH = 'script'
 
 RESULTS = "results"
 RESULTFILE = "results.tsv"
@@ -39,12 +39,12 @@ rule all:
 		nuc=join(OUTDIR, RESULTS, "nucleotide", RESULTFILE),
 		aggs=expand(join(OUTDIR, RESULTS, "aggregation", "gene_biotype", "{biotype}", RESULTFILE), biotype=BIOTYPES),
 		stats=join(BUILDPATH, recipeGTF, "gene_biotype", "gene_biotype_stats"),
-        mne=MNE_FILENAME,
-		gmtk=join(OUTDIR, RESULTS, "gmtk_parameters", RESULTFILE) if config['parameters'] else []
+        mne=MNE_FILENAME if MNE_FILENAME else [],
+		gmtk=join(OUTDIR, RESULTS, "gmtk_parameters", RESULTFILE) if GMTK_PARAMS else []
 	output:
 		outfile=join(OUTDIR, PLOTS, PLOTFILE)
 	script:
-		"visualization.py"
+		f"{SCRIPT_PATH}/visualization.py"
 
 # DOWNLOADING RULES
 # GGD conda installations into the anaconda environment folder
@@ -54,7 +54,6 @@ rule download_targets:
 		join(BUILDPATH, recipeSEQ, fileSEQ),  # output for the sequence
 		join(BUILDPATH, recipeGTF, "gene_biotype", "gene_biotype_stats")  # gene biotype separation output
 
-	
 rule download_ggd_annotation:
 	input:
 	output:
@@ -97,7 +96,7 @@ rule create_gene_biotype_gtf:
 		outdir=join(BUILDPATH, recipeGTF, "gene_biotype"),
 		outfile=fileGTF
 	script:
-		"create_gene_biotype_gtfs.py"
+		f"{SCRIPT_PATH}/create_gene_biotype_gtfs.py"
 
 
 # ANALYZING RULES
@@ -109,7 +108,7 @@ rule run_segtools_gmtk_parameters:
 	output:
 		join(OUTDIR, RESULTS, "gmtk_parameters", RESULTFILE)
 	script:
-		"create_gmtk_results.py"
+		f"{SCRIPT_PATH}/create_gmtk_results.py"
 
 
 # Segtools Aggregation results obtention, general and by gene_biotype
@@ -137,11 +136,11 @@ rule run_segtools_aggregation_gene_biotype:
 
 rule create_aggregation_results_general:
 	input:
-		infile=join(OUTDIR, DATA, "aggregation", "general", "feature_aggregation.tab")
+		join(OUTDIR, DATA, "aggregation", "general", "feature_aggregation.tab")
 	output:
-		outfile=join(OUTDIR, RESULTS, "aggregation", "general", RESULTFILE)
+		join(OUTDIR, RESULTS, "aggregation", "general", RESULTFILE)
 	script:
-		"create_aggregation_results.py"
+		f"{SCRIPT_PATH}/create_aggregation_results.py"
 
 rule create_aggregation_results_gene_biotype:
 	input:
@@ -149,7 +148,7 @@ rule create_aggregation_results_gene_biotype:
 	output:
 		outfile=join(OUTDIR, RESULTS, "aggregation", "gene_biotype", "{biotype}", RESULTFILE)
 	script:
-		"create_aggregation_results.py"
+		f"{SCRIPT_PATH}/create_aggregation_results.py"
 
 
 # Segtools Length Distribution execution and results creation
@@ -209,7 +208,7 @@ rule create_nucleotide_results:
 	output:
 		outfile=join(OUTDIR, RESULTS, "nucleotide", RESULTFILE)
 	script:
-		"create_nucleotide_results.py"
+		f"{SCRIPT_PATH}/create_nucleotide_results.py"
 
 
 # Visualization

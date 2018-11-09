@@ -13,7 +13,7 @@ from os import path
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.transforms import ScaledTranslation
 
-from segzoo.gene_biotypes import BIOTYPES
+from segzoo.script.gene_biotypes import BIOTYPES
 
 # VARIABLES AND CONSTANTS
 

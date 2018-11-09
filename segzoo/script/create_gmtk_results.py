@@ -1,5 +1,7 @@
-import re
 import argparse
+import re
+import sys
+
 import pandas as pd
 
 
@@ -51,7 +53,7 @@ def gmtk_means_to_df(filename):
     return gmtk_matrix
 
 
-def parse_args():
+def parse_args(args):
 
     parser = argparse.ArgumentParser(description='Save GMTK mean parameters in tabular format from input.master '
                                                  'or params.params')
@@ -59,21 +61,25 @@ def parse_args():
     parser.add_argument('input', type=str, help='path to a gmtk param file')
     parser.add_argument('output', type=str, help='path to store the table file, '
                                                  'including filename and extension (.tsv)')
-    args = parser.parse_args()
+    parsed_args = parser.parse_args(args)
+    return parsed_args
+
+
+def get_args():
+    # allow to run the script from snakemake and cmd
+    # if script is run from snakemake
+    if 'snakemake' in globals():
+        # convert snakemake.io.InputFiles object to str
+        args = [str(snakemake.input), str(snakemake.output)]
+        args = parse_args(args)
+    else:
+        args = parse_args(sys.argv[1:])
+
     return args
 
 
 if __name__ == '__main__':
+    args = get_args()
 
-    # allow to run the script from snakemake and cmd
-    if 'snakemake' in globals():
-        # convert snakemake.io.InputFiles object to str
-        infile = str(snakemake.input)
-        outfile = str(snakemake.output)
-    else:
-        args = parse_args()
-        infile = args.input
-        outfile = args.output
-
-    df = gmtk_means_to_df(infile)
-    df.T.to_csv(outfile, sep='\t')
+    df = gmtk_means_to_df(args.input)
+    df.T.to_csv(args.output, sep='\t')

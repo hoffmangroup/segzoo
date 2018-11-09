@@ -2,7 +2,6 @@ from pybedtools import BedTool
 from collections import defaultdict
 import os
 from os.path import join, exists
-from segzoo.gene_biotypes import BIOTYPES
 
 GTF_GENE_FEATURE_INDEX = 2  # Position of the "feature" parameter in an interval (2 in GTF format)
 
