@@ -1,17 +1,15 @@
 # import pandas as pd
-import matplotlib as mpl
+from pathlib import Path
 
+
+import matplotlib as mpl
 mpl.use('Agg')
 
-import pandas as pd
-import seaborn as sns
-
 import matplotlib.pyplot as plt
-
-from collections import defaultdict
-from os import path
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.transforms import ScaledTranslation
+import pandas as pd
+import seaborn as sns
 
 from segzoo.script.gene_biotypes import BIOTYPES
 
@@ -156,22 +154,20 @@ def mix_data_matrix():
 # Prepare the aggregation results in a dictionary of DataFrames by gene_biotype and return the maximum value
 def aggregation():
     # Rename columns
-    COLUMN_NAMES = ["5' flanking", "initial exon", "initial intron", "internal exon", "internal introns", \
-                    "terminal exon", "terminal intron", "3' flanking"]
 
     def to_percent(row):
         return (row / row.sum()).round(2) * 100
 
-    df_dict = defaultdict()
-    max_value = 0
-    for biotype in BIOTYPES:
-        filename = next(x for x in snakemake.input.aggs if path.basename(path.dirname(x)) == biotype)
-        biotype_df = pd.read_table(filename, index_col=0).apply(to_percent, axis=1).fillna(0)
-        biotype_df.columns = COLUMN_NAMES
+    df_dict = {}
 
-        # Update max value
-        max_value = max(biotype_df.values.max(), max_value)
-        df_dict[biotype] = biotype_df
+    for filename in snakemake.input.aggs:
+        biotype = Path(filename).parent.stem
+        df = pd.read_table(filename, index_col=0)
+        df_row_norm = df.apply(to_percent, axis=1).fillna(0)
+
+        df_dict[biotype] = df_row_norm
+
+    max_value = max(df.values.max() for df in df_dict.values())
 
     return df_dict, max_value
 
