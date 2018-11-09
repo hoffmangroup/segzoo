@@ -1,6 +1,8 @@
 1.0.5:
 * create gmtk-parameter heatmap from params.params or input.master
 * add mne parameter to change track and segment label labels
+* make create_gmtk_results.py a module and stand alone script
+* make create_agg_results.py a module and stand alone script
 
 1.0.4:
 * init
