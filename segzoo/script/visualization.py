@@ -1,7 +1,6 @@
 # import pandas as pd
 from pathlib import Path
 
-
 import matplotlib as mpl
 mpl.use('Agg')
 
@@ -12,15 +11,19 @@ import pandas as pd
 import seaborn as sns
 
 from segzoo.script.gene_biotypes import BIOTYPES
+from segzoo.script.create_aggregation_results import SPLICE_BASENAMES
 
 # VARIABLES AND CONSTANTS
 
 # Table proportion modifiers
-NUM_COMPONENTS = 8
 GMTK_FACTOR = 1
 MIX_FACTOR = 1.5
 AGG_FACTOR = 1
 ROW_CORRECTOR = 1
+
+# Modify the width space between axes. This value is used as numerator over
+# the total number of columns. Increase the value will decrease the space and vice-versa.
+WSPACE_NUM = 3.6
 
 # Font scaling variables
 FONT_SCALE = 1.5
@@ -95,11 +98,6 @@ def human_format(num):
         return '{}{}'.format(int(num), magnit_chars[magnitude])
     else:
         return '{:.1f}{}'.format(num, magnit_chars[magnitude])
-
-
-# Prepare the gmtk parameters in a DataFrame
-def gmtk_parameters():
-    return pd.read_table(snakemake.input.gmtk, index_col=0)
 
 
 # Prepare nucleotide results in a Series format
@@ -196,24 +194,12 @@ def get_mne_ticklabels(filename, track_labels=[], label_labels=[]):
 if __name__ == '__main__':
     # Call the functions that obtain the results in DataFrames
     if snakemake.config['parameters']:
-        res_gmtk = gmtk_parameters()
+        res_gmtk = pd.read_table(snakemake.input.gmtk, index_col=0)
     else:
         res_gmtk = pd.DataFrame()
+
     res_mix_hm, res_mix_ann = mix_data_matrix()
     res_agg_dict, agg_vmax = aggregation()
-
-    # Dimensioning variables
-    GMTK_COL = res_gmtk.shape[1] * GMTK_FACTOR + 1
-    MIX_COL = res_mix_hm.shape[1] * MIX_FACTOR + 1
-    AGG_COL = len(BIOTYPES) * NUM_COMPONENTS * AGG_FACTOR + 1
-
-    n_rows = res_mix_hm.shape[0] * ROW_CORRECTOR
-    n_columns = GMTK_COL + MIX_COL + AGG_COL
-
-    # Create grid with axes following the ratios desired for the dimensions
-    f, (ax_gmtk, ax_mix, ax_agg) = \
-        plt.subplots(1, 3, figsize=(n_columns, n_rows),
-                     gridspec_kw={"wspace": 3.6 / n_columns, "width_ratios": [GMTK_COL, MIX_COL, AGG_COL]})
 
     # Read labels from mne file
     if snakemake.config['mne'] and not res_gmtk.empty:
@@ -223,6 +209,20 @@ if __name__ == '__main__':
     else:
         new_tracks, new_labels = (res_gmtk.columns, res_mix_hm.index)
 
+    # Dimensioning variables
+    GMTK_COL = res_gmtk.shape[1] * GMTK_FACTOR + 1
+    MIX_COL = res_mix_hm.shape[1] * MIX_FACTOR + 1
+    AGG_COL = len(BIOTYPES) * len(SPLICE_BASENAMES) * AGG_FACTOR + 1
+
+
+    n_rows = res_mix_hm.shape[0] * ROW_CORRECTOR
+    n_columns = GMTK_COL + MIX_COL + AGG_COL
+
+    # Create grid with axes following the ratios desired for the dimensions
+    f, (ax_gmtk, ax_mix, ax_agg) = \
+        plt.subplots(1, 3, figsize=(n_columns, n_rows),
+                     gridspec_kw={"wspace": WSPACE_NUM/n_columns,
+                                  "width_ratios": [GMTK_COL, MIX_COL, AGG_COL]})
 
     # GMTK parameters
     if snakemake.config['parameters']:
@@ -231,11 +231,9 @@ if __name__ == '__main__':
         cbar_gmtk.ax.set_yticklabels(cbar_gmtk.ax.get_yticklabels(), fontsize=LABEL_FONTSIZE)
 
         # Setting titles and axis labels
-        ax_gmtk.set_yticklabels(new_labels, rotation=0,
-                                fontsize=LABEL_FONTSIZE)  # put label names horizontally
+        ax_gmtk.set_yticklabels(new_labels, rotation=0, fontsize=LABEL_FONTSIZE)  # put label names horizontally
         ax_gmtk.set_xticklabels(new_tracks, rotation=90, fontsize=LABEL_FONTSIZE)
-        ax_gmtk.set_title('GMTK parameters',
-                          fontsize=TITLE_FONTSIZE,
+        ax_gmtk.set_title('GMTK parameters', fontsize=TITLE_FONTSIZE,
                           position=(0, 1 + 0.6 / res_gmtk.shape[0] * FONT_SCALE / 1.5),
                           ha='left', va='bottom')
     else:
