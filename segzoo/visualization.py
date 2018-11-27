@@ -62,11 +62,13 @@ def gt_n_ints(num, n_digits=2):
     False otherwise
 
     >>> gt_n_ints(12.123456)
-    True
+    False
     >>> gt_n_ints(123.123456)
+    True
+    >>> gt_n_ints(1.23, 1)
     False
     """
-    return len(str(int(num))) > 2
+    return len(str(int(num))) > n_digits
 
 
 def human_format(num):

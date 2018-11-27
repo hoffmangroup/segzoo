@@ -33,6 +33,7 @@ def main(args=sys.argv[1:]):
     parser.add_argument('--download-only', action='store_true',
                         help='Execute only the rules that need internet connection, which store data in a shared directory')
     parser.add_argument('--mne', help='.bed.gz file, the segmentation/annotation output from Segway')
+    parser.add_argument('--unlock', action='store_true', help='unlock directory (see snakemake doc)')
 
     parsed_args = parser.parse_args(args)
 
@@ -40,6 +41,6 @@ def main(args=sys.argv[1:]):
         snakemake.snakemake(path.join(here, "Snakefile"), targets=["download_targets"], cores=parsed_args.j, config=vars(parsed_args))
 
     else:
-        snakemake.snakemake(path.join(here, "Snakefile"), cores=parsed_args.j, config=vars(parsed_args))
+        snakemake.snakemake(path.join(here, "Snakefile"), cores=parsed_args.j, config=vars(parsed_args), unlock=parsed_args.unlock)
 
     # printreason=True, dryrun=True, printshellcmds=True)
