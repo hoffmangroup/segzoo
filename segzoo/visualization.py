@@ -181,7 +181,7 @@ def aggregation():
 def get_mne_ticklabels(filename, track_labels=[], label_labels=[]):
     """Parse mne file and return updated tracks and labels"""
 
-    mne_df = pd.read_table(filename)
+    mne_df = pd.read_table(filename, dtype=str)
     assert all(col in ['type', 'old', 'new'] for col in mne_df.columns)
 
     track_df = mne_df[mne_df.type == 'track']
