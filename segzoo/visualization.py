@@ -1,15 +1,19 @@
-# import pandas as pd
-import matplotlib as mpl
+#!/usr/bin/env python
+# coding: utf-8
 
+# import pandas as pd
+import sys
+from os import path
+import argparse
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 mpl.use('Agg')
 
 import pandas as pd
 import seaborn as sns
 
-import matplotlib.pyplot as plt
-
 from collections import defaultdict
-from os import path
+
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.transforms import ScaledTranslation
 
@@ -34,14 +38,13 @@ TITLE_FONTSIZE = 25 * FONT_SCALE / 1.5
 # Table options and properties
 TABLE_POS = "bottom"  # top / bottom / other to ommit
 TABLE_HEIGHT = 1  # relative to the height of 2 rows from the mix matrix
-TABLE_CONTENT = [['max', 'max', 'max', 'max', 'max', 65],
-                 ['min', 'min', 'min', 'min', 'min', 35]]
+TABLE_CONTENT = [['max', 'max', 'max', 'max', 'max', 65, 'max'],
+                 ['min', 'min', 'min', 'min', 'min', 35, 'min']]
 
 # Color maps for the visualization
 cmap_gmtk = sns.diverging_palette(220, 10, as_cmap=True)
 cmap_mix = 'YlGn'
 cmap_agg = 'Blues'
-
 
 def is_decimal_zero(num):
     """
@@ -102,13 +105,13 @@ def human_format(num):
 
 
 # Prepare the gmtk parameters in a DataFrame
-def gmtk_parameters():
-    return pd.read_table(snakemake.input.gmtk, index_col=0)
+def gmtk_parameters(args):
+    return pd.read_csv(args.gmtk, index_col=0)
 
 
 # Prepare nucleotide results in a Series format
-def nucleotide():
-    res_nuc_ann = pd.read_table(snakemake.input.nuc, index_col=0)['GC content'].round(2) * 100
+def nucleotide(args):
+    res_nuc_ann = pd.read_csv(args.nuc, index_col=0, sep='\t')['GC content'].round(2) * 100
 
     # Rename columns
     res_nuc_ann = res_nuc_ann.rename('GC content (%)')
@@ -123,9 +126,9 @@ def nucleotide():
 
 
 # Prepare length_distribution results in a DataFrame
-def length_distribution():
+def length_distribution(args):
     # Preparing the annotation for the matrix, creating a new column called 'frac.segs'
-    res_len_ann = pd.read_table(snakemake.input.len_dist, index_col=0)
+    res_len_ann = pd.read_csv(args.len_dist, index_col=0, sep='\t')
     res_len_ann['frac.segs'] = (res_len_ann['num.segs'] / res_len_ann.loc['all']['num.segs']) * 100
     res_len_ann['frac.bp'] = res_len_ann['frac.bp'] * 100
     res_len_ann = res_len_ann.drop(['num.segs', 'num.bp'], axis=1).drop('all')
@@ -142,24 +145,34 @@ def length_distribution():
     res_len_ann = res_len_ann.round(0)
     return res_len_hm, res_len_ann
 
+# Prepare segment overlap results in a Series format
+def genic_overlap_by_label(args):
+    res_olp_ann = pd.read_csv(args.overlap, index_col=0, sep='\t')
+
+    # Interpolation of the parameters to rescale them between 0 and 1
+    cmax = res_olp_ann.max()
+    cmin = res_olp_ann.min()
+    res_olp_hm = res_olp_ann.copy()
+    res_olp_hm = ((res_olp_hm - cmin) / (cmax - cmin))
+    
+    return res_olp_hm, res_olp_ann
 
 # Prepare the mix matrix for the heatmap and its annotation, both in DataFrames
-def mix_data_matrix():
-    # Joining both matrix to create final heatmap and annotation
-    res_nuc_hm, res_nuc_ann = nucleotide()
-    res_len_hm, res_len_ann = length_distribution()
+def mix_data_matrix(args):
+    # Joining the matrices to create final heatmap and annotation
+    res_nuc_hm, res_nuc_ann = nucleotide(args)
+    res_len_hm, res_len_ann = length_distribution(args)
+    res_olp_hm, res_olp_ann = genic_overlap_by_label(args)
 
-    res_ann = res_len_ann.join(res_nuc_ann)
-    res_hm = res_len_hm.join(res_nuc_hm)
+    res_ann = res_len_ann.join(res_nuc_ann).join(res_olp_ann)
+    res_hm = res_len_hm.join(res_nuc_hm).join(res_olp_hm)
 
     return res_hm, res_ann
 
-
 # Prepare the aggregation results in a dictionary of DataFrames by gene_biotype and return the maximum value
-def aggregation():
+def aggregation(args):
     # Rename columns
-    COLUMN_NAMES = ["5' flanking", "initial exon", "initial intron", "internal exon", "internal introns", \
-                    "terminal exon", "terminal intron", "3' flanking"]
+    COLUMN_NAMES = ["5' flanking", "initial exon", "initial intron", "internal exon", "internal introns", "terminal exon", "terminal intron", "3' flanking"]
 
     def to_percent(row):
         return (row / row.sum()).round(2) * 100
@@ -167,8 +180,8 @@ def aggregation():
     df_dict = defaultdict()
     max_value = 0
     for biotype in BIOTYPES:
-        filename = next(x for x in snakemake.input.aggs if path.basename(path.dirname(x)) == biotype)
-        biotype_df = pd.read_table(filename, index_col=0).apply(to_percent, axis=1).fillna(0)
+        filename = next(x for x in args.aggs if path.basename(path.dirname(x)) == biotype)
+        biotype_df = pd.read_csv(filename, index_col=0, sep='\t').apply(to_percent, axis=1).fillna(0)
         biotype_df.columns = COLUMN_NAMES
 
         # Update max value
@@ -181,7 +194,7 @@ def aggregation():
 def get_mne_ticklabels(filename, track_labels=[], label_labels=[]):
     """Parse mne file and return updated tracks and labels"""
 
-    mne_df = pd.read_table(filename, dtype=str)
+    mne_df = pd.read_csv(filename, dtype=str, sep='\t')
     assert all(col in ['type', 'old', 'new'] for col in mne_df.columns)
 
     track_df = mne_df[mne_df.type == 'track']
@@ -198,15 +211,53 @@ def get_mne_ticklabels(filename, track_labels=[], label_labels=[]):
 
     return new_tracks, new_labels
 
+# parse arguments
+
+def parse_args(args):
+    description = "pass arguments! :D"
+    parser = argparse.ArgumentParser(description=description, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    #TODO: add helpers
+    parser.add_argument('--gmtk')
+    parser.add_argument('--nuc')
+    parser.add_argument('--len_dist')
+    parser.add_argument('--overlap')
+    parser.add_argument('--mne')
+    parser.add_argument('--aggs')
+    parser.add_argument('--stats')
+    parser.add_argument('--outfile')
+    return parser.parse_args(args)
 
 if __name__ == '__main__':
+    if 'snakemake' in dir():
+        args = parse_args(['--gmtk', snakemake.input.gmtk, 
+                           '--nuc', snakemake.input.nuc,
+                           '--len_dist', snakemake.input.len_dist, 
+                           '--overlap', snakemake.input.olp,
+                           '--mne', snakemake.input.mne,
+                           '--aggs', snakemake.input.aggs,
+                           '--stats', snakemake.input.stats,
+                           '--outfile', snakemake.output.outfile])
+    else:
+        args = parse_args([
+            #'--gmtk', '/scratch/test_segzoo/outdir/results/gmtk_parameters/results.tsv',
+            '--nuc', '/scratch/test_segzoo/outdir/results/nucleotide/results.tsv',
+            '--len_dist', '/scratch/test_segzoo/outdir/results/length_distribution/results.tsv',
+            '--overlap', '/scratch/test_segzoo/outdir/results/overlaps/results.tsv',
+            '--mne', '',
+            '--aggs', ['/scratch/test_segzoo/outdir/results/aggregation/gene_biotype/protein_coding/results.tsv', '/scratch/test_segzoo/outdir/results/aggregation/gene_biotype/lincRNA/results.tsv'],
+            '--stats', '/scratch/miniconda3/envs/segzoo_env/share/ggd/Homo_sapiens/hg38/rnaseq/gene_biotype/gene_biotype_stats',
+            '--outfile', '/scratch/test_segzoo/outdir/plots/plot.png'
+        ])
+
+        args = parse_args(sys.argv[1:])
+
     # Call the functions that obtain the results in DataFrames
-    if snakemake.config['parameters']:
-        res_gmtk = gmtk_parameters()
+    if args.gmtk:
+        res_gmtk = gmtk_parameters(args)
     else:
         res_gmtk = pd.DataFrame()
-    res_mix_hm, res_mix_ann = mix_data_matrix()
-    res_agg_dict, agg_vmax = aggregation()
+    res_mix_hm, res_mix_ann = mix_data_matrix(args)
+    res_agg_dict, agg_vmax = aggregation(args)
 
     # Dimensioning variables
     GMTK_COL = res_gmtk.shape[1] * GMTK_FACTOR + 1
@@ -217,21 +268,20 @@ if __name__ == '__main__':
     n_columns = GMTK_COL + MIX_COL + AGG_COL
 
     # Create grid with axes following the ratios desired for the dimensions
-    f, (ax_gmtk, ax_mix, ax_agg) = \
-        plt.subplots(1, 3, figsize=(n_columns, n_rows),
+    f, (ax_gmtk, ax_mix, ax_agg) = plt.subplots(1, 3, figsize=(n_columns, n_rows),
                      gridspec_kw={"wspace": 3.6 / n_columns, "width_ratios": [GMTK_COL, MIX_COL, AGG_COL]})
 
     # Read labels from mne file
-    if snakemake.config['mne'] and not res_gmtk.empty:
-        new_tracks, new_labels = get_mne_ticklabels(snakemake.config['mne'], res_gmtk.columns, res_mix_hm.index)
-    elif snakemake.config['mne']:
-        new_tracks, new_labels = get_mne_ticklabels(snakemake.config['mne'], [], res_mix_hm.index)
+    if args.mne and not res_gmtk.empty:
+        new_tracks, new_labels = get_mne_ticklabels(args['mne'], res_gmtk.columns, res_mix_hm.index)
+    elif args.mne:
+        new_tracks, new_labels = get_mne_ticklabels(args['mne'], [], res_mix_hm.index)
     else:
         new_tracks, new_labels = (res_gmtk.columns, res_mix_hm.index)
 
 
     # GMTK parameters
-    if snakemake.config['parameters']:
+    if args.gmtk:
         g_gmtk = sns.heatmap(res_gmtk, cmap=cmap_gmtk, ax=ax_gmtk)
         cbar_gmtk = g_gmtk.collections[0].colorbar
         cbar_gmtk.ax.set_yticklabels(cbar_gmtk.ax.get_yticklabels(), fontsize=LABEL_FONTSIZE)
@@ -256,7 +306,7 @@ if __name__ == '__main__':
     ax_mix.set_ylabel('')
     ax_mix.set_xticklabels(ax_mix.get_xticklabels(), rotation=90, fontsize=LABEL_FONTSIZE)
 
-    if snakemake.config['parameters']:
+    if args.gmtk:
         ax_mix.set_yticklabels([])
     else:
         ax_mix.set_yticklabels(new_labels, rotation=0, fontsize=LABEL_FONTSIZE)
@@ -293,7 +343,7 @@ if __name__ == '__main__':
             high_low_table._cells[(0, j)]._text.set_color('white')
 
     # Aggregation
-    stats_df = pd.read_table(snakemake.input.stats, index_col=0)  # data stored when creating the gtf files
+    stats_df = pd.read_csv(args.stats, index_col=0, sep='\t')  # data stored when creating the gtf files
     divider = make_axes_locatable(ax_agg)
     title_args = dict(fontsize=LABEL_FONTSIZE, position=(1.0, 1.0), ha='right', va='bottom')
 
@@ -325,4 +375,6 @@ if __name__ == '__main__':
     else:
         f.delaxes(ax_agg)
 
-    f.savefig(snakemake.output.outfile, bbox_inches='tight')
+    f.savefig(args.outfile, bbox_inches='tight')
+
+

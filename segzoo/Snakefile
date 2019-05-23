@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[ ]:
+
+
 from os.path import join, splitext
 from segzoo.gene_biotypes import BIOTYPES
 
@@ -37,9 +43,10 @@ rule all:
 	input:
 		len_dist=join(OUTDIR, RESULTS, "length_distribution", RESULTFILE),
 		nuc=join(OUTDIR, RESULTS, "nucleotide", RESULTFILE),
+        	olp=join(OUTDIR, RESULTS, "overlaps", RESULTFILE),
 		aggs=expand(join(OUTDIR, RESULTS, "aggregation", "gene_biotype", "{biotype}", RESULTFILE), biotype=BIOTYPES),
 		stats=join(BUILDPATH, recipeGTF, "gene_biotype", "gene_biotype_stats"),
-        mne=MNE_FILENAME,
+        	mne=MNE_FILENAME,
 		gmtk=join(OUTDIR, RESULTS, "gmtk_parameters", RESULTFILE) if config['parameters'] else []
 	output:
 		outfile=join(OUTDIR, PLOTS, PLOTFILE)
@@ -153,7 +160,7 @@ rule create_aggregation_results_gene_biotype:
 
 
 # Segtools Length Distribution execution and results creation
-#TODO Don't just copy, preprocess for easier obtention of results
+# TODO: Don't just copy, preprocess for easier obtention of results
 rule run_segtools_length_distribution:
 	input:
 		preprocessed_segmentation,
@@ -212,6 +219,19 @@ rule create_nucleotide_results:
 		"create_nucleotide_results.py"
 
 
+
+
+# Calculate the percentage of intervals that overlap with a gene, grouped by labels
+rule count_overlaps:
+	input:
+		seg=SEGMENTATION,
+		ann=join(BUILDPATH, recipeGTF, fileGTF)
+	output:
+		outfile=join(OUTDIR, RESULTS, "overlaps", RESULTFILE)  
+	script:
+		"count_overlaps.py"
+
+
 # Visualization
 
 rule create_diagram:
@@ -221,3 +241,4 @@ rule create_diagram:
 		"dag.png"
 	shell:
 		"snakemake --rulegraph all | dot -Tsvg > {PLOTS}/dag.svg"
+
