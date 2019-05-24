@@ -106,7 +106,7 @@ def human_format(num):
 
 # Prepare the gmtk parameters in a DataFrame
 def gmtk_parameters(args):
-    return pd.read_csv(args.gmtk, index_col=0)
+    return pd.read_csv(args.gmtk, index_col=0, sep='\t')
 
 
 # Prepare nucleotide results in a Series format
@@ -233,14 +233,15 @@ def parse_args(args):
     '''
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     # TODO: add helpers
-    parser.add_argument('--gmtk')
-    parser.add_argument('--nuc')
-    parser.add_argument('--len_dist')
-    parser.add_argument('--overlap')
-    parser.add_argument('--mne')
-    parser.add_argument('--aggs')
-    parser.add_argument('--stats')
-    parser.add_argument('--outfile')
+    parser.add_argument('--gmtk', help='Gmtk parameter results produced by Segway')
+    parser.add_argument('--nuc', help='Nucleotide results file')
+    parser.add_argument('--len_dist', help='Length distribution statistics')
+    parser.add_argument('--overlap', help='The percentage of segments that overlap with a gene')
+    parser.add_argument('--mne', help='Allows specify an mne file to translate segment labels and track names on the '
+                                      'shown on the figure')
+    parser.add_argument('--aggs', help='Aggregation results file')
+    parser.add_argument('--stats', help='Gene biotype stats')
+    parser.add_argument('--outfile', help='The path of the resulting visualization')
     return parser.parse_args(args)
 
 
