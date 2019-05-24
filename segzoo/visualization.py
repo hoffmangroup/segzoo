@@ -218,9 +218,21 @@ def get_mne_ticklabels(filename, track_labels=[], label_labels=[]):
 
 # parse arguments
 def parse_args(args):
-    description = "pass arguments! :D"
+    description = '''
+    By running visualization.py directly, you are asked to specify the local results files as parameters.
+    This enables fast generation of desired plots. 
+    
+    If you generated these results using Segzoo, they should be in the folder where your segzoo has been installed, 
+    and under /outdir/results/
+    
+    In many cases, stats would be in your Segzoo environment, for example,
+    segzoo_env/share/ggd/Homo_sapiens/hg38/rnaseq/gene_biotype/gene_biotype_stats
+    
+    If you run Segzoo, outfile would be your_segzoo_folder/outdir/plots/plot.png
+    But you do not have to follow this convention.
+    '''
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    #TODO: add helpers
+    # TODO: add helpers
     parser.add_argument('--gmtk')
     parser.add_argument('--nuc')
     parser.add_argument('--len_dist')
@@ -336,6 +348,7 @@ if __name__ == '__main__':
             bbox=[0, 1.02, 1, TABLE_HEIGHT / n_rows],  # [left,bottom,width,height]
             fontsize=LABEL_FONTSIZE,
             cellLoc='center')
+        # TODO: try to not iterate through every text. change colour by row
         for j in range(mix_columns):
             high_low_table._cells[(0, j)]._text.set_color('white')   # TODO: do not access protected variables
 

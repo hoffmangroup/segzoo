@@ -43,10 +43,10 @@ rule all:
 	input:
 		len_dist=join(OUTDIR, RESULTS, "length_distribution", RESULTFILE),
 		nuc=join(OUTDIR, RESULTS, "nucleotide", RESULTFILE),
-        	olp=join(OUTDIR, RESULTS, "overlaps", RESULTFILE),
+        olp=join(OUTDIR, RESULTS, "overlaps", RESULTFILE),
 		aggs=expand(join(OUTDIR, RESULTS, "aggregation", "gene_biotype", "{biotype}", RESULTFILE), biotype=BIOTYPES),
 		stats=join(BUILDPATH, recipeGTF, "gene_biotype", "gene_biotype_stats"),
-        	mne=MNE_FILENAME,
+        mne=MNE_FILENAME,
 		gmtk=join(OUTDIR, RESULTS, "gmtk_parameters", RESULTFILE) if config['parameters'] else []
 	output:
 		outfile=join(OUTDIR, PLOTS, PLOTFILE)
