@@ -7,7 +7,6 @@ from os import path
 import argparse
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-mpl.use('Agg')
 
 import pandas as pd
 import seaborn as sns
@@ -18,6 +17,8 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.transforms import ScaledTranslation
 
 from segzoo.gene_biotypes import BIOTYPES
+
+mpl.use('Agg')
 
 # VARIABLES AND CONSTANTS
 
@@ -45,6 +46,7 @@ TABLE_CONTENT = [['max', 'max', 'max', 'max', 'max', 65, 'max'],
 cmap_gmtk = sns.diverging_palette(220, 10, as_cmap=True)
 cmap_mix = 'YlGn'
 cmap_agg = 'Blues'
+
 
 def is_decimal_zero(num):
     """
@@ -96,8 +98,6 @@ def human_format(num):
         magnitude += 1
         num /= 1000.0
 
-    unit = magnit_chars[magnitude]
-
     if gt_n_ints(num) or is_decimal_zero(num):
         return '{}{}'.format(int(num), magnit_chars[magnitude])
     else:
@@ -145,6 +145,7 @@ def length_distribution(args):
     res_len_ann = res_len_ann.round(0)
     return res_len_hm, res_len_ann
 
+
 # Prepare segment overlap results in a Series format
 def genic_overlap_by_label(args):
     res_olp_ann = pd.read_csv(args.overlap, index_col=0, sep='\t')
@@ -154,8 +155,10 @@ def genic_overlap_by_label(args):
     cmin = res_olp_ann.min()
     res_olp_hm = res_olp_ann.copy()
     res_olp_hm = ((res_olp_hm - cmin) / (cmax - cmin))
+    res_olp_ann = res_olp_ann.round()
     
     return res_olp_hm, res_olp_ann
+
 
 # Prepare the mix matrix for the heatmap and its annotation, both in DataFrames
 def mix_data_matrix(args):
@@ -169,10 +172,11 @@ def mix_data_matrix(args):
 
     return res_hm, res_ann
 
+
 # Prepare the aggregation results in a dictionary of DataFrames by gene_biotype and return the maximum value
 def aggregation(args):
     # Rename columns
-    COLUMN_NAMES = ["5' flanking", "initial exon", "initial intron", "internal exon", "internal introns", "terminal exon", "terminal intron", "3' flanking"]
+    column_names = ["5' flanking", "initial exon", "initial intron", "internal exon", "internal introns", "terminal exon", "terminal intron", "3' flanking"]
 
     def to_percent(row):
         return (row / row.sum()).round(2) * 100
@@ -182,7 +186,7 @@ def aggregation(args):
     for biotype in BIOTYPES:
         filename = next(x for x in args.aggs if path.basename(path.dirname(x)) == biotype)
         biotype_df = pd.read_csv(filename, index_col=0, sep='\t').apply(to_percent, axis=1).fillna(0)
-        biotype_df.columns = COLUMN_NAMES
+        biotype_df.columns = column_names
 
         # Update max value
         max_value = max(biotype_df.values.max(), max_value)
@@ -211,8 +215,8 @@ def get_mne_ticklabels(filename, track_labels=[], label_labels=[]):
 
     return new_tracks, new_labels
 
-# parse arguments
 
+# parse arguments
 def parse_args(args):
     description = "pass arguments! :D"
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -227,28 +231,20 @@ def parse_args(args):
     parser.add_argument('--outfile')
     return parser.parse_args(args)
 
+
 if __name__ == '__main__':
     if 'snakemake' in dir():
-        args = parse_args(['--gmtk', snakemake.input.gmtk, 
-                           '--nuc', snakemake.input.nuc,
-                           '--len_dist', snakemake.input.len_dist, 
-                           '--overlap', snakemake.input.olp,
-                           '--mne', snakemake.input.mne,
-                           '--aggs', snakemake.input.aggs,
-                           '--stats', snakemake.input.stats,
-                           '--outfile', snakemake.output.outfile])
-    else:
         args = parse_args([
-            #'--gmtk', '/scratch/test_segzoo/outdir/results/gmtk_parameters/results.tsv',
-            '--nuc', '/scratch/test_segzoo/outdir/results/nucleotide/results.tsv',
-            '--len_dist', '/scratch/test_segzoo/outdir/results/length_distribution/results.tsv',
-            '--overlap', '/scratch/test_segzoo/outdir/results/overlaps/results.tsv',
-            '--mne', '',
-            '--aggs', ['/scratch/test_segzoo/outdir/results/aggregation/gene_biotype/protein_coding/results.tsv', '/scratch/test_segzoo/outdir/results/aggregation/gene_biotype/lincRNA/results.tsv'],
-            '--stats', '/scratch/miniconda3/envs/segzoo_env/share/ggd/Homo_sapiens/hg38/rnaseq/gene_biotype/gene_biotype_stats',
-            '--outfile', '/scratch/test_segzoo/outdir/plots/plot.png'
+            '--gmtk', snakemake.input.gmtk,
+            '--nuc', snakemake.input.nuc,
+            '--len_dist', snakemake.input.len_dist, 
+            '--overlap', snakemake.input.olp,
+            '--mne', snakemake.input.mne,
+            '--aggs', snakemake.input.aggs,
+            '--stats', snakemake.input.stats,
+            '--outfile', snakemake.output.outfile
         ])
-
+    else:
         args = parse_args(sys.argv[1:])
 
     # Call the functions that obtain the results in DataFrames
@@ -269,7 +265,9 @@ if __name__ == '__main__':
 
     # Create grid with axes following the ratios desired for the dimensions
     f, (ax_gmtk, ax_mix, ax_agg) = plt.subplots(1, 3, figsize=(n_columns, n_rows),
-                     gridspec_kw={"wspace": 3.6 / n_columns, "width_ratios": [GMTK_COL, MIX_COL, AGG_COL]})
+                                                gridspec_kw={"wspace": 3.6 / n_columns, "width_ratios": [GMTK_COL,
+                                                                                                         MIX_COL,
+                                                                                                         AGG_COL]})
 
     # Read labels from mne file
     if args.mne and not res_gmtk.empty:
@@ -278,7 +276,6 @@ if __name__ == '__main__':
         new_tracks, new_labels = get_mne_ticklabels(args['mne'], [], res_mix_hm.index)
     else:
         new_tracks, new_labels = (res_gmtk.columns, res_mix_hm.index)
-
 
     # GMTK parameters
     if args.gmtk:
@@ -322,7 +319,7 @@ if __name__ == '__main__':
             fontsize=LABEL_FONTSIZE,
             cellLoc='center')
         for j in range(mix_columns):
-            high_low_table._cells[(0, j)]._text.set_color('white')
+            high_low_table._cells[(0, j)]._text.set_color('white')   # TODO: do not access protected variables
 
         # Offset labels down to leave space for the table
         dx = 0
@@ -340,7 +337,7 @@ if __name__ == '__main__':
             fontsize=LABEL_FONTSIZE,
             cellLoc='center')
         for j in range(mix_columns):
-            high_low_table._cells[(0, j)]._text.set_color('white')
+            high_low_table._cells[(0, j)]._text.set_color('white')   # TODO: do not access protected variables
 
     # Aggregation
     stats_df = pd.read_csv(args.stats, index_col=0, sep='\t')  # data stored when creating the gtf files
