@@ -69,15 +69,17 @@ rule download_ggd_annotation:
 	params:
 		inter=join(BUILDPATH, recipeGTF, BUILD + ".gtf")
 	shell:
-		"conda install -p {PREFIX} -y {QUIET} {CLOBBER} -c ggd-alpha {BUILD}-gtf;"
-		"gzip {params.inter}"
+		#"conda install -p {PREFIX} -y {QUIET} {CLOBBER} -c ggd-alpha {BUILD}-gtf;"
+		#"gzip {params.inter}"
+		"ggd install {BUILD}-gtf-ensembl-v1"
 
 rule download_ggd_sequence:
 	input:
 	output:
 		join(BUILDPATH, recipeSEQ, fileSEQ)
 	shell:
-		"conda install -p {PREFIX} -y {QUIET} {CLOBBER} -c ggd-alpha {BUILD}-sequence"
+		#"conda install -p {PREFIX} -y {QUIET} {CLOBBER} -c ggd-alpha {BUILD}-sequence"
+		"ggd install {BUILD}-sequence-1000g-v1"
 
 # PREPROCESSING RULES
 
