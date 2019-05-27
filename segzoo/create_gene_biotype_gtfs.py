@@ -20,8 +20,8 @@ for interval in gtf:
     biotype = interval.attrs['gene_biotype']  # gene_type instead of gene_biotype in hg19
     # if biotype in __biotypes__:
     # It's best to create already all the files for future runs, because it's this loop that takes time to run
-    if not interval.chrom.startswith('chr'):
-        continue
+    #if not interval.chrom.startswith('chr'):
+        #continue
     biotype_dict[biotype].append(fields)
     if interval[GTF_GENE_FEATURE_INDEX] == 'gene':
         biotype_gene_dict[biotype].append(fields)
