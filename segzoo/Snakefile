@@ -36,6 +36,24 @@ DATA = "data"
 PLOTS = "plots"
 PLOTFILE = "plot.png"
 
+# Temporary solution for setting predictable recipe names and file paths
+BUILD_RECIPE_MAPPING = {
+'hg38': {'sequence':
+			 {'recipe': 'hg38-reference-genome-ucsc-v1',
+			  'filepath': join(PREFIX, 'share/ggd/Homo_sapiens/hg38/hg38-reference-genome-ucsc-v1/1/hg38-reference-genome-ucsc-v1.fa')},
+		'gtf':
+			{'recipe': 'hg38-gtf-ensembl-v1',
+			 'filepath': join(PREFIX, 'share/ggd/Homo_sapiens/hg38/hg38-gtf-ensembl-v1/1/hg38-gtf-ensembl-v1.gtf.gz')}},
+'danRer10': {'sequence':
+				 {'recipe': 'danrer10-sequence-ucsc-v1',
+				  'filepath': join(PREFIX, 'share/ggd/Danio_rerio/danRer10/danrer10-sequence-ucsc-v1/1/danrer10-sequence-ucsc-v1.fa')},
+			 'gtf':
+				 {'recipe': 'grcz10-gtf-ensembl-v1',
+				  'filepath': join(PREFIX, 'share/ggd/Danio_rerio/GRCz10/grcz10-gtf-ensembl-v1/1/grcz10-gtf-ensembl-v1.gtf.gz')}}
+}
+
+RECIPE_FILEPATH = BUILD_RECIPE_MAPPING[BUILD]  # Temporary variable
+
 preprocessed_segmentation = join(OUTDIR, DATA,"segmentation", "segmentation.pkl.gz")
 
 # Main rule that sets the targets to obtain
@@ -43,10 +61,10 @@ rule all:
 	input:
 		len_dist=join(OUTDIR, RESULTS, "length_distribution", RESULTFILE),
 		nuc=join(OUTDIR, RESULTS, "nucleotide", RESULTFILE),
-        olp=join(OUTDIR, RESULTS, "overlaps", RESULTFILE),
+        	olp=join(OUTDIR, RESULTS, "overlaps", RESULTFILE),
 		aggs=expand(join(OUTDIR, RESULTS, "aggregation", "gene_biotype", "{biotype}", RESULTFILE), biotype=BIOTYPES),
 		stats=join(BUILDPATH, recipeGTF, "gene_biotype", "gene_biotype_stats"),
-        mne=MNE_FILENAME,
+        	mne=MNE_FILENAME,
 		gmtk=join(OUTDIR, RESULTS, "gmtk_parameters", RESULTFILE) if config['parameters'] else []
 	output:
 		outfile=join(OUTDIR, PLOTS, PLOTFILE)
@@ -57,29 +75,35 @@ rule all:
 # GGD conda installations into the anaconda environment folder
 rule download_targets:
 	input:
-		join(BUILDPATH, recipeGTF, fileGTF),  # output for the annotation
-		join(BUILDPATH, recipeSEQ, fileSEQ),  # output for the sequence
+		#join(BUILDPATH, recipeGTF, fileGTF),  # output for the annotation
+		RECIPE_FILEPATH['sequence']['filepath'],
+		#join(BUILDPATH, recipeSEQ, fileSEQ),  # output for the sequence
+		RECIPE_FILEPATH['gtf']['filepath'],
 		join(BUILDPATH, recipeGTF, "gene_biotype", "gene_biotype_stats")  # gene biotype separation output
 
 	
 rule download_ggd_annotation:
 	input:
 	output:
-		join(BUILDPATH, recipeGTF, fileGTF)
+		#join(BUILDPATH, recipeGTF, fileGTF)
+		RECIPE_FILEPATH['gtf']['filepath']
 	params:
 		inter=join(BUILDPATH, recipeGTF, BUILD + ".gtf")
 	shell:
 		#"conda install -p {PREFIX} -y {QUIET} {CLOBBER} -c ggd-alpha {BUILD}-gtf;"
 		#"gzip {params.inter}"
-		"ggd install {BUILD}-gtf-ensembl-v1"
+		"ggd install {RECIPE_FILEPATH['gtf']['recipe']}"
 
 rule download_ggd_sequence:
 	input:
 	output:
-		join(BUILDPATH, recipeSEQ, fileSEQ)
+		#join(BUILDPATH, recipeSEQ, fileSEQ)
+		#"/scratch/miniconda3/envs/segzoo_env/share/ggd/Homo_sapiens/hg38/hg38-reference-genome-ucsc-v1/1/hg38-reference-genome-ucsc-v1.fa"
+		RECIPE_FILEPATH['sequence']['filepath']
 	shell:
 		#"conda install -p {PREFIX} -y {QUIET} {CLOBBER} -c ggd-alpha {BUILD}-sequence"
-		"ggd install {BUILD}-sequence-1000g-v1"
+		#"ggd install hg38-reference-genome-ucsc-v1"
+		"ggd install {RECIPE_FILEPATH['sequence']['recipe']}"
 
 # PREPROCESSING RULES
 
@@ -97,7 +121,8 @@ rule run_segtools_preprocess:
 # Parse the main gtf file to create one file per each gene biotype (uses pybedtools)
 rule create_gene_biotype_gtf:
 	input:
-		gtf=join(BUILDPATH, recipeGTF, fileGTF)
+		#gtf=join(BUILDPATH, recipeGTF, fileGTF)
+		gtf=RECIPE_FILEPATH['gtf']['filepath']
 	output:
 		expand(join(BUILDPATH, recipeGTF, "gene_biotype", "{biotype}", "general", fileGTF), biotype=BIOTYPES),
 		expand(join(BUILDPATH, recipeGTF, "gene_biotype", "{biotype}", "gene", fileGTF), biotype=BIOTYPES),
@@ -125,7 +150,8 @@ rule run_segtools_gmtk_parameters:
 rule run_segtools_aggregation_general:
 	input:
 		preprocessed_segmentation,
-		gtf=join(BUILDPATH, recipeGTF, fileGTF)
+		#gtf=join(BUILDPATH, recipeGTF, fileGTF)
+		gtf=RECIPE_FILEPATH['gtf']['filepath']
 	output:
 		join(OUTDIR, DATA, "aggregation", "general", "feature_aggregation.tab")
 	params:
@@ -180,7 +206,8 @@ rule run_segtools_length_distribution:
 rule run_segtools_feature_distance_general:
 	input:
 		preprocessed_segmentation,
-		gtf=join(BUILDPATH, recipeGTF, fileGTF)
+		#gtf=join(BUILDPATH, recipeGTF, fileGTF)
+		gtf=RECIPE_FILEPATH['gtf']['filepath']
 	output:
 		join(OUTDIR, DATA, "feature_distance", "general", "feature_distance.tab"),
 		outfile=join(OUTDIR, DATA, "feature_distance", "general", "feature_distance_segments.tab")
@@ -192,7 +219,7 @@ rule run_segtools_feature_distance_general:
 rule run_segtools_feature_distance_gene_biotype:
 	input:
 		preprocessed_segmentation,
-		gtf=join(BUILDPATH, recipeGTF, "gene_biotype", "{biotype}", "gene", fileGTF)
+		gtf=RECIPE_FILEPATH['gtf']['filepath']
 	output:
 		join(OUTDIR, DATA, "feature_distance", "gene_biotype", "{biotype}", "feature_distance.tab"),
 		outfile=join(OUTDIR, DATA, "feature_distance", "gene_biotype", "{biotype}", "feature_distance_segments.tab")
@@ -206,7 +233,8 @@ rule run_segtools_feature_distance_gene_biotype:
 rule run_bedtools_nuc:
 	input:
 		SEGMENTATION,
-		fasta=join(BUILDPATH, recipeSEQ, fileSEQ)
+		#fasta=join(BUILDPATH, recipeSEQ, fileSEQ)
+		fasta=RECIPE_FILEPATH['sequence']['filepath']
 	output:
 		join(OUTDIR, DATA, "nucleotide", "bedtools_output")
 	shell:
@@ -221,13 +249,12 @@ rule create_nucleotide_results:
 		"create_nucleotide_results.py"
 
 
-
-
 # Calculate the percentage of intervals that overlap with a gene, grouped by labels
 rule count_overlaps:
 	input:
 		seg=SEGMENTATION,
-		ann=join(BUILDPATH, recipeGTF, fileGTF)
+		#ann=join(BUILDPATH, recipeGTF, fileGTF)
+		ann=RECIPE_FILEPATH['gtf']['filepath']
 	output:
 		outfile=join(OUTDIR, RESULTS, "overlaps", RESULTFILE)  
 	script:
