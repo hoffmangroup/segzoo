@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[ ]:
-
-
 from os.path import join, splitext
 from segzoo.gene_biotypes import BIOTYPES
 
@@ -16,6 +10,7 @@ SEGMENTATION = config["segmentation"]
 # TODO: try to set default values in argparse instead of using inline if/else
 GMTK_PARAMS = config["parameters"] if config["parameters"] else []
 MNE_FILENAME = config['mne'] if config['mne'] else []
+NORMALIZE_GMTK = config['normalize_gmtk']
 
 PREFIX = config["prefix"]  # "anaconda_path/envs/your_env/"
 SPECIES = config['species']  # "Homo_sapiens"
@@ -45,11 +40,11 @@ BUILD_RECIPE_MAPPING = {
 			{'recipe': 'hg38-gtf-ensembl-v1',
 			 'filepath': join(PREFIX, 'share/ggd/Homo_sapiens/hg38/hg38-gtf-ensembl-v1/1/hg38-gtf-ensembl-v1.gtf.gz')}},
 'danRer10': {'sequence':
-				 {'recipe': 'danrer10-sequence-ucsc-v1',
-				  'filepath': join(PREFIX, 'share/ggd/Danio_rerio/danRer10/danrer10-sequence-ucsc-v1/1/danrer10-sequence-ucsc-v1.fa')},
+				 {'recipe': 'danrer10-reference-genome-ucsc-v1',
+				  'filepath': join(PREFIX, 'share/ggd/Danio_rerio/danRer10/danrer10-reference-genome-ucsc-v1/1/danrer10-reference-genome-ucsc-v1.fa')},
 			 'gtf':
-				 {'recipe': 'grcz10-gtf-ensembl-v1',
-				  'filepath': join(PREFIX, 'share/ggd/Danio_rerio/GRCz10/grcz10-gtf-ensembl-v1/1/grcz10-gtf-ensembl-v1.gtf.gz')}}
+				 {'recipe': 'danrer10-gtf-ensembl-v1',
+				  'filepath': join(PREFIX, 'share/ggd/Danio_rerio/danRer10/danrer10-gtf-ensembl-v1/1/danrer10-gtf-ensembl-v1.gtf.gz')}}
 }
 
 RECIPE_FILEPATH = BUILD_RECIPE_MAPPING[BUILD]  # Temporary variable
@@ -61,15 +56,18 @@ rule all:
 	input:
 		len_dist=join(OUTDIR, RESULTS, "length_distribution", RESULTFILE),
 		nuc=join(OUTDIR, RESULTS, "nucleotide", RESULTFILE),
-        	olp=join(OUTDIR, RESULTS, "overlaps", RESULTFILE),
+		olp=join(OUTDIR, RESULTS, "overlap", RESULTFILE),
 		aggs=expand(join(OUTDIR, RESULTS, "aggregation", "gene_biotype", "{biotype}", RESULTFILE), biotype=BIOTYPES),
 		stats=join(BUILDPATH, recipeGTF, "gene_biotype", "gene_biotype_stats"),
-        	mne=MNE_FILENAME,
+		mne=MNE_FILENAME,
 		gmtk=join(OUTDIR, RESULTS, "gmtk_parameters", RESULTFILE) if config['parameters'] else []
 	output:
 		outfile=join(OUTDIR, PLOTS, PLOTFILE)
+	params:
+		normalize_gmtk=NORMALIZE_GMTK
 	script:
 		"visualization.py"
+
 
 # DOWNLOADING RULES
 # GGD conda installations into the anaconda environment folder
@@ -88,11 +86,12 @@ rule download_ggd_annotation:
 		#join(BUILDPATH, recipeGTF, fileGTF)
 		RECIPE_FILEPATH['gtf']['filepath']
 	params:
-		inter=join(BUILDPATH, recipeGTF, BUILD + ".gtf")
+		#inter=join(BUILDPATH, recipeGTF, BUILD + ".gtf")
+		recipe=RECIPE_FILEPATH['gtf']['recipe']
 	shell:
 		#"conda install -p {PREFIX} -y {QUIET} {CLOBBER} -c ggd-alpha {BUILD}-gtf;"
 		#"gzip {params.inter}"
-		"ggd install {RECIPE_FILEPATH['gtf']['recipe']}"
+		"conda install -p {PREFIX} -y {QUIET} {CLOBBER} -c ggd-genomics {params.recipe}"
 
 rule download_ggd_sequence:
 	input:
@@ -100,10 +99,12 @@ rule download_ggd_sequence:
 		#join(BUILDPATH, recipeSEQ, fileSEQ)
 		#"/scratch/miniconda3/envs/segzoo_env/share/ggd/Homo_sapiens/hg38/hg38-reference-genome-ucsc-v1/1/hg38-reference-genome-ucsc-v1.fa"
 		RECIPE_FILEPATH['sequence']['filepath']
+	params:
+		recipe=RECIPE_FILEPATH['sequence']['recipe']
 	shell:
 		#"conda install -p {PREFIX} -y {QUIET} {CLOBBER} -c ggd-alpha {BUILD}-sequence"
 		#"ggd install hg38-reference-genome-ucsc-v1"
-		"ggd install {RECIPE_FILEPATH['sequence']['recipe']}"
+		"conda install -p {PREFIX} -y {QUIET} {CLOBBER} -c ggd-genomics {params.recipe}"
 
 # PREPROCESSING RULES
 
@@ -248,18 +249,25 @@ rule create_nucleotide_results:
 	script:
 		"create_nucleotide_results.py"
 
-
-# Calculate the percentage of intervals that overlap with a gene, grouped by labels
-rule count_overlaps:
+# Segtools Overlap results obtention
+rule run_segtools_overlap:
 	input:
-		seg=SEGMENTATION,
-		#ann=join(BUILDPATH, recipeGTF, fileGTF)
-		ann=RECIPE_FILEPATH['gtf']['filepath']
+		SEGMENTATION,
+		gtf=RECIPE_FILEPATH['gtf']['filepath']
 	output:
-		outfile=join(OUTDIR, RESULTS, "overlaps", RESULTFILE)  
-	script:
-		"count_overlaps.py"
+		join(OUTDIR, DATA, "overlap", "overlap.tab")
+	params:
+		outdir=join(OUTDIR, DATA, "overlap")
+	shell:
+		"segtools-overlap --by=bases {QUIET} {CLOBBER} {NOPLOT} --outdir {params.outdir} {SEGMENTATION} {input.gtf}"
 
+rule create_overlap_results:
+	input:
+		infile=join(OUTDIR, DATA, "overlap", "overlap.tab")
+	output:
+		outfile=join(OUTDIR, RESULTS, "overlap", RESULTFILE)
+	script:
+		"create_overlap_results.py"
 
 # Visualization
 

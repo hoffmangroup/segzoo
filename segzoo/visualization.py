@@ -27,6 +27,8 @@ NUM_COMPONENTS = 8
 GMTK_FACTOR = 1
 MIX_FACTOR = 1.5
 AGG_FACTOR = 1
+OVERLAP_FACTOR = 1
+OVERLAP_COLUMN_NUMBER = 2
 ROW_CORRECTOR = 1
 
 # Font scaling variables
@@ -39,14 +41,14 @@ TITLE_FONTSIZE = 25 * FONT_SCALE / 1.5
 # Table options and properties
 TABLE_POS = "bottom"  # top / bottom / other to ommit
 TABLE_HEIGHT = 1  # relative to the height of 2 rows from the mix matrix
-TABLE_CONTENT = [['max', 'max', 'max', 'max', 'max', 65, 'max'],
-                 ['min', 'min', 'min', 'min', 'min', 35, 'min']]
+TABLE_CONTENT = [['max', 'max', 'max', 'max', 'max', 65],
+                 ['min', 'min', 'min', 'min', 'min', 35]]
 
 # Color maps for the visualization
 cmap_gmtk = sns.diverging_palette(220, 10, as_cmap=True)
 cmap_mix = 'YlGn'
 cmap_agg = 'Blues'
-
+cmap_overlap = 'Reds'
 
 def is_decimal_zero(num):
     """
@@ -106,7 +108,13 @@ def human_format(num):
 
 # Prepare the gmtk parameters in a DataFrame
 def gmtk_parameters(args):
-    return pd.read_csv(args.gmtk, index_col=0, sep='\t')
+    def normalize_col(col):
+        return (col-col.min())/(col.max()-col.min())
+
+    df = pd.read_csv(args.gmtk, index_col=0, sep='\t')
+    if bool(args.normalize_gmtk):
+        df = df.apply(normalize_col, axis=0)
+    return df
 
 
 # Prepare nucleotide results in a Series format
@@ -135,7 +143,7 @@ def length_distribution(args):
 
     # Rename columns
     res_len_ann.index = res_len_ann.index.map(int)  # labels need to be strings
-    res_len_ann.columns = ['Mean length', 'Median length', 'st.dev length', 'Base pairs (%)', 'Segments (%)']
+    res_len_ann.columns = ['Mean length', 'Median length', 'Std length', 'Base pairs (%)', 'Segments (%)']
 
     res_len_hm = res_len_ann.copy()
     # Interpolation of the parameters to rescale them between 0 and 1
@@ -146,32 +154,23 @@ def length_distribution(args):
     return res_len_hm, res_len_ann
 
 
-# Prepare segment overlap results in a Series format
-def genic_overlap_by_label(args):
-    res_olp_ann = pd.read_csv(args.overlap, index_col=0, sep='\t')
-
-    # Interpolation of the parameters to rescale them between 0 and 1
-    cmax = res_olp_ann.max()
-    cmin = res_olp_ann.min()
-    res_olp_hm = res_olp_ann.copy()
-    res_olp_hm = ((res_olp_hm - cmin) / (cmax - cmin))
-    res_olp_ann = res_olp_ann.round()
-    
-    return res_olp_hm, res_olp_ann
-
-
 # Prepare the mix matrix for the heatmap and its annotation, both in DataFrames
 def mix_data_matrix(args):
     # Joining the matrices to create final heatmap and annotation
     res_nuc_hm, res_nuc_ann = nucleotide(args)
     res_len_hm, res_len_ann = length_distribution(args)
-    res_olp_hm, res_olp_ann = genic_overlap_by_label(args)
 
-    res_ann = res_len_ann.join(res_nuc_ann).join(res_olp_ann)
-    res_hm = res_len_hm.join(res_nuc_hm).join(res_olp_hm)
+    res_ann = res_len_ann.join(res_nuc_ann)
+    res_hm = res_len_hm.join(res_nuc_hm)
 
     return res_hm, res_ann
 
+# Prepare the overlap results in Dataframe
+def overlap(args):
+    df = pd.read_csv(args.overlap, sep='\t', header=0, index_col=0)
+    df = df * 100
+    df = df.apply(round).astype(int)
+    return df
 
 # Prepare the aggregation results in a dictionary of DataFrames by gene_biotype and return the maximum value
 def aggregation(args):
@@ -232,16 +231,17 @@ def parse_args(args):
     But you do not have to follow this convention.
     '''
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    # TODO: add helpers
-    parser.add_argument('--gmtk', help='Gmtk parameter results produced by Segway')
-    parser.add_argument('--nuc', help='Nucleotide results file')
-    parser.add_argument('--len_dist', help='Length distribution statistics')
-    parser.add_argument('--overlap', help='The percentage of segments that overlap with a gene')
-    parser.add_argument('--mne', help='Allows specify an mne file to translate segment labels and track names on the '
-                                      'shown on the figure')
-    parser.add_argument('--aggs', help='Aggregation results file')
-    parser.add_argument('--stats', help='Gene biotype stats')
-    parser.add_argument('--outfile', help='The path of the resulting visualization')
+    parser.add_argument('--gmtk', default='/scratch/cool_zebrafish_stuff/outdir/results/gmtk_parameters/results.tsv', help='Gmtk parameter results produced by Segway')
+    parser.add_argument('--normalize-gmtk', default=True, help='If True, normalize gmtk parameters column wise. Default to True')
+    parser.add_argument('--nuc', default='/scratch/cool_zebrafish_stuff/outdir/results/nucleotide/results.tsv', help='Nucleotide results file')
+    parser.add_argument('--len_dist', default='/scratch/cool_zebrafish_stuff/outdir/results/length_distribution/results.tsv', help='Length distribution statistics')
+    parser.add_argument('--overlap', default='/scratch/cool_zebrafish_stuff/outdir/results/overlap/results.tsv', help='The percentage of segments that overlap with a gene')
+    parser.add_argument('--mne', help='Allows specify an mne file to translate segment labels and track names on the shown on the figure')
+    parser.add_argument('--aggs', 
+                        default=['/scratch/cool_zebrafish_stuff/outdir/results/aggregation/gene_biotype/lincRNA/results.tsv', 
+                                 '/scratch/cool_zebrafish_stuff/outdir/results/aggregation/gene_biotype/protein_coding/results.tsv'], help='Aggregation results file')
+    parser.add_argument('--stats', default='/scratch/miniconda3/envs/segzoo_env/share/ggd/Danio_rerio/danRer10/rnaseq/gene_biotype/gene_biotype_stats', help='Gene biotype stats')
+    parser.add_argument('--outfile', default='/scratch/cool_zebrafish_stuff/outdir/plots/plot.png', help='The path of the resulting visualization')
     return parser.parse_args(args)
 
 
@@ -249,6 +249,7 @@ if __name__ == '__main__':
     if 'snakemake' in dir():
         args = parse_args([
             '--gmtk', snakemake.input.gmtk,
+            '--normalize-gmtk', str(snakemake.params.normalize_gmtk),
             '--nuc', snakemake.input.nuc,
             '--len_dist', snakemake.input.len_dist, 
             '--overlap', snakemake.input.olp,
@@ -271,16 +272,18 @@ if __name__ == '__main__':
     # Dimensioning variables
     GMTK_COL = res_gmtk.shape[1] * GMTK_FACTOR + 1
     MIX_COL = res_mix_hm.shape[1] * MIX_FACTOR + 1
+    OVERLAP_COL = OVERLAP_COLUMN_NUMBER * OVERLAP_FACTOR + 1
     AGG_COL = len(BIOTYPES) * NUM_COMPONENTS * AGG_FACTOR + 1
 
     n_rows = res_mix_hm.shape[0] * ROW_CORRECTOR
-    n_columns = GMTK_COL + MIX_COL + AGG_COL
+    n_columns = GMTK_COL + MIX_COL + OVERLAP_COL + AGG_COL
 
     # Create grid with axes following the ratios desired for the dimensions
-    f, (ax_gmtk, ax_mix, ax_agg) = plt.subplots(1, 3, figsize=(n_columns, n_rows),
-                                                gridspec_kw={"wspace": 3.6 / n_columns, "width_ratios": [GMTK_COL,
-                                                                                                         MIX_COL,
-                                                                                                         AGG_COL]})
+    f, (ax_gmtk, ax_mix, ax_overlap, ax_agg) = plt.subplots(1, 4, figsize=(n_columns, n_rows),
+                                                            gridspec_kw={"wspace": 8 / n_columns, "width_ratios": [GMTK_COL,
+                                                                                                                   MIX_COL,
+                                                                                                                   OVERLAP_COL,
+                                                                                                                   AGG_COL]})
 
     # Read labels from mne file
     if args.mne and not res_gmtk.empty:
@@ -352,7 +355,24 @@ if __name__ == '__main__':
         # TODO: try to not iterate through every text. change colour by row
         for j in range(mix_columns):
             high_low_table._cells[(0, j)]._text.set_color('white')   # TODO: do not access protected variables
+    
+    # Overlap
+    overlap_df = overlap(args)
+    
+    g_overlap = sns.heatmap(overlap_df, vmin=0, vmax=100, annot=True, cbar=True, fmt='.5g', yticklabels=False, cmap=cmap_overlap, ax=ax_overlap)
+    ax_overlap.set_xticklabels(ax_overlap.get_xticklabels(), fontsize=LABEL_FONTSIZE)
+    
+    cbar_overlap = g_overlap.collections[0].colorbar
+    cbar_overlap.set_ticks([0, 100])
+    cbar_overlap.ax.set_yticklabels(['0%', '100%'], fontsize=LABEL_FONTSIZE)
+    
+    ax_overlap.text(0, -0.6 * FONT_SCALE / 1.5, "Overlap", fontsize=TITLE_FONTSIZE, ha='left', va='bottom')
 
+    ax_overlap.set_title('Bases',
+                          fontsize=LABEL_FONTSIZE,
+                          position=(0, 1 + 0.6 / 10 * FONT_SCALE / 1.5),
+                          ha='left', va='bottom')
+    
     # Aggregation
     stats_df = pd.read_csv(args.stats, index_col=0, sep='\t')  # data stored when creating the gtf files
     divider = make_axes_locatable(ax_agg)
@@ -385,7 +405,5 @@ if __name__ == '__main__':
                                     fontsize=LABEL_FONTSIZE)  # the format takes out decimals
     else:
         f.delaxes(ax_agg)
-
+    
     f.savefig(args.outfile, bbox_inches='tight')
-
-

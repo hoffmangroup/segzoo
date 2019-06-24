@@ -33,6 +33,7 @@ def main(args=sys.argv[1:]):
     parser.add_argument('--download-only', action='store_true',
                         help='Execute only the rules that need internet connection, which store data in a shared directory')
     parser.add_argument('--mne', help='Allows specify an mne file to translate segment labels and track names on the shown on the figure')
+    parser.add_argument('--normalize-gmtk', default=True, help='If True, normalize gmtk parameters column wise. Default to True')
     parser.add_argument('--unlock', action='store_true', help='unlock directory (see snakemake doc)')
 
     parsed_args = parser.parse_args(args)
