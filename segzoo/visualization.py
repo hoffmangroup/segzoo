@@ -105,6 +105,16 @@ def human_format(num):
     else:
         return '{:.1f}{}'.format(num, magnit_chars[magnitude])
 
+def pretty_number(n):
+    """ Add space every three digits from left to right
+
+    >>> pretty_number(1000)
+    '1 000'
+    >>> pretty_number(100)
+    '100'
+    """
+    return '{:,}'.format(int(n)).replace(',', ' ')
+
 
 # Prepare the gmtk parameters in a DataFrame
 def gmtk_parameters(args):
@@ -384,7 +394,7 @@ if __name__ == '__main__':
         ax_agg_aux = divider.append_axes("right", size="100%", pad=0.3)
         sns.heatmap(res_agg_dict[biotype], annot=True, cbar=False, vmin=0, vmax=agg_vmax, cmap=cmap_agg, ax=ax_agg_aux,
                     fmt='.5g')
-        ax_agg_aux.set_title('{} (n={})'.format(biotype, stats_df.loc[biotype, 'genes']), **title_args)
+        ax_agg_aux.set_title('{} (n={})'.format(biotype, pretty_number(stats_df.loc[biotype, 'genes'])), **title_args)
         ax_agg_aux.set_yticklabels([])
         ax_agg_aux.set_xticklabels(ax_agg_aux.get_xticklabels(), rotation=90, fontsize=LABEL_FONTSIZE)
 
@@ -395,7 +405,7 @@ if __name__ == '__main__':
         g_agg = sns.heatmap(res_agg_dict[BIOTYPES[0]], annot=True, cbar=True, vmin=0, vmax=agg_vmax,
                             cbar_ax=ax_agg_cbar,
                             cmap=cmap_agg, ax=ax_agg, fmt='.5g')
-        ax_agg.set_title('{} (n={})'.format(BIOTYPES[0], stats_df.loc[BIOTYPES[0], 'genes']), **title_args)
+        ax_agg.set_title('{} (n={})'.format(BIOTYPES[0], pretty_number(stats_df.loc[BIOTYPES[0], 'genes'])), **title_args)
         ax_agg.set_yticklabels([])
         ax_agg.set_xticklabels(ax_agg.get_xticklabels(), rotation=90, fontsize=LABEL_FONTSIZE)
 
