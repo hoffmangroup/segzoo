@@ -305,7 +305,9 @@ if __name__ == '__main__':
 
     # GMTK parameters
     if args.gmtk:
-        g_gmtk = sns.heatmap(res_gmtk, cmap=cmap_gmtk, ax=ax_gmtk)
+        divider_gmtk = make_axes_locatable(ax_gmtk)
+        ax_gmtk_cbar = divider_gmtk.append_axes("right", size=0.35, pad=0.3)
+        g_gmtk = sns.heatmap(res_gmtk, cmap=cmap_gmtk, ax=ax_gmtk, cbar_ax=ax_gmtk_cbar)
         cbar_gmtk = g_gmtk.collections[0].colorbar
         cbar_gmtk.set_ticks(gmtk_max_min)
         cbar_gmtk.ax.set_yticklabels(['col\nmax', 'col\nmin'], fontsize=LABEL_FONTSIZE)
@@ -322,8 +324,10 @@ if __name__ == '__main__':
         f.delaxes(ax_gmtk)
 
     # Mix matrix
+    divider_mix = make_axes_locatable(ax_mix)
+    ax_mix_cbar = divider_mix.append_axes("right", size=0.35, pad=0.3)
     g_mix = sns.heatmap(res_mix_hm, annot=res_mix_ann.applymap(human_format), cbar=True, cmap=cmap_mix, vmin=0, vmax=1,
-                        ax=ax_mix, fmt='')
+                        ax=ax_mix, cbar_ax=ax_mix_cbar, fmt='')
     cbar_mix = g_mix.collections[0].colorbar
     cbar_mix.set_ticks([0, 1])
     cbar_mix.ax.set_yticklabels(['low', 'high'], fontsize=LABEL_FONTSIZE)
@@ -368,10 +372,9 @@ if __name__ == '__main__':
             high_low_table._cells[(0, j)]._text.set_color('white')   # TODO: do not access protected variables
     
     # Overlap
-    overlap_df = overlap(args)
-    
-    g_overlap = sns.heatmap(overlap_df, vmin=0, vmax=100, annot=True, cbar=True, fmt='.5g', yticklabels=False, cmap=cmap_overlap, ax=ax_overlap)
-    ax_overlap.set_xticklabels(ax_overlap.get_xticklabels(), fontsize=LABEL_FONTSIZE)
+    divider_overlap = make_axes_locatable(ax_overlap)
+    ax_overlap_cbar = divider_overlap.append_axes("right", size=0.35, pad=0.3)
+    g_overlap = sns.heatmap(overlap(args), vmin=0, vmax=100, annot=True, cbar=True, fmt='.5g', yticklabels=False, cmap=cmap_overlap, ax=ax_overlap, cbar_ax=ax_overlap_cbar)
     
     cbar_overlap = g_overlap.collections[0].colorbar
     cbar_overlap.set_ticks([0, 100])
@@ -386,12 +389,12 @@ if __name__ == '__main__':
     
     # Aggregation
     stats_df = pd.read_csv(args.stats, index_col=0, sep='\t')  # data stored when creating the gtf files
-    divider = make_axes_locatable(ax_agg)
+    divider_agg = make_axes_locatable(ax_agg)
     title_args = dict(fontsize=LABEL_FONTSIZE, position=(1.0, 1.0), ha='right', va='bottom')
 
     # Divide axes, plot heatmap and edit axis configuration for each biotype
     for biotype in BIOTYPES[1:]:
-        ax_agg_aux = divider.append_axes("right", size="100%", pad=0.3)
+        ax_agg_aux = divider_agg.append_axes("right", size="100%", pad=0.3)
         sns.heatmap(res_agg_dict[biotype], annot=True, cbar=False, vmin=0, vmax=agg_vmax, cmap=cmap_agg, ax=ax_agg_aux,
                     fmt='.5g')
         ax_agg_aux.set_title('{} (n={})'.format(biotype, pretty_number(stats_df.loc[biotype, 'genes'])), **title_args)
@@ -399,7 +402,7 @@ if __name__ == '__main__':
         ax_agg_aux.set_xticklabels(ax_agg_aux.get_xticklabels(), rotation=90, fontsize=LABEL_FONTSIZE)
 
     if len(BIOTYPES) > 0:
-        ax_agg_cbar = divider.append_axes("right", size=0.35, pad=0.3)
+        ax_agg_cbar = divider_agg.append_axes("right", size=0.35, pad=0.3)
 
         ax_agg.text(0, -0.6 * FONT_SCALE / 1.5, "Aggregation", fontsize=TITLE_FONTSIZE, ha='left', va='bottom')
         g_agg = sns.heatmap(res_agg_dict[BIOTYPES[0]], annot=True, cbar=True, vmin=0, vmax=agg_vmax,
