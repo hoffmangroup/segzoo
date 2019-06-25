@@ -83,17 +83,17 @@ def human_format(num):
     Shorten long numbers by replacing trailing intergers by a unit.
 
     >>> human_format(1_000)
-    '1K'
+    '1k'
     >>> human_format(1_234)
-    '1.2K'
+    '1.2k'
     >>> human_format(12_345)
-    '12.3K'
+    '12.3k'
     >>> human_format(123_456)
-    '123K'
+    '123k'
     >>> human_format(1_000_000)
-    '1M'
+    '1m'
     """
-    magnit_chars = ['', 'K', 'M', 'G', 'T', 'P']
+    magnit_chars = ['', 'k', 'm', 'g', 't', 'p']
 
     magnitude = 0
     while abs(num) >= 1000:
