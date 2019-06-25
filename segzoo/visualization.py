@@ -122,7 +122,7 @@ def gmtk_parameters(args):
         return (col-col.min())/(col.max()-col.min())
 
     df = pd.read_csv(args.gmtk, index_col=0, sep='\t')
-    if bool(args.normalize_gmtk):
+    if args.normalize_gmtk:
         df = df.apply(normalize_col, axis=0)
     return df, [df.max().max(), df.min().min()]
 
@@ -242,7 +242,7 @@ def parse_args(args):
     '''
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--gmtk', default='/scratch/cool_zebrafish_stuff/outdir/results/gmtk_parameters/results.tsv', help='Gmtk parameter results produced by Segway')
-    parser.add_argument('--normalize-gmtk', default=True, help='If True, normalize gmtk parameters column wise. Default to True')
+    parser.add_argument('--normalize-gmtk', action='store_true', help='If set, normalize gmtk parameters column wise')
     parser.add_argument('--nuc', default='/scratch/cool_zebrafish_stuff/outdir/results/nucleotide/results.tsv', help='Nucleotide results file')
     parser.add_argument('--len_dist', default='/scratch/cool_zebrafish_stuff/outdir/results/length_distribution/results.tsv', help='Length distribution statistics')
     parser.add_argument('--overlap', default='/scratch/cool_zebrafish_stuff/outdir/results/overlap/results.tsv', help='The percentage of segments that overlap with a gene')
@@ -257,17 +257,29 @@ def parse_args(args):
 
 if __name__ == '__main__':
     if 'snakemake' in dir():
-        args = parse_args([
-            '--gmtk', snakemake.input.gmtk,
-            '--normalize-gmtk', str(snakemake.params.normalize_gmtk),
-            '--nuc', snakemake.input.nuc,
-            '--len_dist', snakemake.input.len_dist, 
-            '--overlap', snakemake.input.olp,
-            '--mne', snakemake.input.mne,
-            '--aggs', snakemake.input.aggs,
-            '--stats', snakemake.input.stats,
-            '--outfile', snakemake.output.outfile
-        ])
+        if snakemake.params.normalize_gmtk:
+            args = parse_args([
+                '--gmtk', snakemake.input.gmtk,
+                '--normalize-gmtk',
+                '--nuc', snakemake.input.nuc,
+                '--len_dist', snakemake.input.len_dist,
+                '--overlap', snakemake.input.olp,
+                '--mne', snakemake.input.mne,
+                '--aggs', snakemake.input.aggs,
+                '--stats', snakemake.input.stats,
+                '--outfile', snakemake.output.outfile
+            ])
+        else:
+            args = parse_args([
+                '--gmtk', snakemake.input.gmtk,
+                '--nuc', snakemake.input.nuc,
+                '--len_dist', snakemake.input.len_dist,
+                '--overlap', snakemake.input.olp,
+                '--mne', snakemake.input.mne,
+                '--aggs', snakemake.input.aggs,
+                '--stats', snakemake.input.stats,
+                '--outfile', snakemake.output.outfile
+            ])
     else:
         args = parse_args(sys.argv[1:])
 
@@ -309,7 +321,7 @@ if __name__ == '__main__':
         ax_gmtk_cbar = divider_gmtk.append_axes("right", size=0.35, pad=0.3)
         g_gmtk = sns.heatmap(res_gmtk, cmap=cmap_gmtk, ax=ax_gmtk, cbar_ax=ax_gmtk_cbar)
         cbar_gmtk = g_gmtk.collections[0].colorbar
-        if bool(args.normalize_gmtk):
+        if args.normalize_gmtk:
             cbar_gmtk.set_ticks(gmtk_max_min)
             cbar_gmtk.ax.set_yticklabels(['col\nmax', 'col\nmin'], fontsize=LABEL_FONTSIZE)
         else:
