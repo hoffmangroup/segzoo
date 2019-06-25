@@ -309,8 +309,11 @@ if __name__ == '__main__':
         ax_gmtk_cbar = divider_gmtk.append_axes("right", size=0.35, pad=0.3)
         g_gmtk = sns.heatmap(res_gmtk, cmap=cmap_gmtk, ax=ax_gmtk, cbar_ax=ax_gmtk_cbar)
         cbar_gmtk = g_gmtk.collections[0].colorbar
-        cbar_gmtk.set_ticks(gmtk_max_min)
-        cbar_gmtk.ax.set_yticklabels(['col\nmax', 'col\nmin'], fontsize=LABEL_FONTSIZE)
+        if bool(args.normalize_gmtk):
+            cbar_gmtk.set_ticks(gmtk_max_min)
+            cbar_gmtk.ax.set_yticklabels(['col\nmax', 'col\nmin'], fontsize=LABEL_FONTSIZE)
+        else:
+            cbar_gmtk.ax.set_yticklabels(cbar_gmtk.ax.get_yticklabels(), fontsize=LABEL_FONTSIZE)
 
         # Setting titles and axis labels
         ax_gmtk.set_yticklabels(new_labels, rotation=0,
