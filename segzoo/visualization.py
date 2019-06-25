@@ -114,7 +114,7 @@ def gmtk_parameters(args):
     df = pd.read_csv(args.gmtk, index_col=0, sep='\t')
     if bool(args.normalize_gmtk):
         df = df.apply(normalize_col, axis=0)
-    return df
+    return df, [df.max().max(), df.min().min()]
 
 
 # Prepare nucleotide results in a Series format
@@ -263,7 +263,7 @@ if __name__ == '__main__':
 
     # Call the functions that obtain the results in DataFrames
     if args.gmtk:
-        res_gmtk = gmtk_parameters(args)
+        res_gmtk, gmtk_max_min = gmtk_parameters(args)
     else:
         res_gmtk = pd.DataFrame()
     res_mix_hm, res_mix_ann = mix_data_matrix(args)
@@ -297,7 +297,8 @@ if __name__ == '__main__':
     if args.gmtk:
         g_gmtk = sns.heatmap(res_gmtk, cmap=cmap_gmtk, ax=ax_gmtk)
         cbar_gmtk = g_gmtk.collections[0].colorbar
-        cbar_gmtk.ax.set_yticklabels(cbar_gmtk.ax.get_yticklabels(), fontsize=LABEL_FONTSIZE)
+        cbar_gmtk.set_ticks(gmtk_max_min)
+        cbar_gmtk.ax.set_yticklabels(['col\nmax', 'col\nmin'], fontsize=LABEL_FONTSIZE)
 
         # Setting titles and axis labels
         ax_gmtk.set_yticklabels(new_labels, rotation=0,
