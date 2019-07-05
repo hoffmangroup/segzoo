@@ -1,7 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# import pandas as pd
 import sys
 from os import path
 import argparse
@@ -106,7 +102,8 @@ def human_format(num):
         return '{:.1f}{}'.format(num, magnit_chars[magnitude])
 
 def pretty_number(n):
-    """ Add space every three digits from left to right
+    """
+    Add space every three digits from left to right
 
     >>> pretty_number(1000)
     '1 000'
@@ -122,6 +119,7 @@ def gmtk_parameters(args):
         return (col-col.min())/(col.max()-col.min())
 
     df = pd.read_csv(args.gmtk, index_col=0, sep='\t')
+    #df.sort_index(inplace=True)
     if args.normalize_gmtk:
         df = df.apply(normalize_col, axis=0)
     return df, [df.max().max(), df.min().min()]
@@ -130,6 +128,7 @@ def gmtk_parameters(args):
 # Prepare nucleotide results in a Series format
 def nucleotide(args):
     res_nuc_ann = pd.read_csv(args.nuc, index_col=0, sep='\t')['GC content'].round(2) * 100
+    #res_nuc_ann.sort_index(inplace=True)
 
     # Rename columns
     res_nuc_ann = res_nuc_ann.rename('GC content (%)')
@@ -147,6 +146,7 @@ def nucleotide(args):
 def length_distribution(args):
     # Preparing the annotation for the matrix, creating a new column called 'frac.segs'
     res_len_ann = pd.read_csv(args.len_dist, index_col=0, sep='\t')
+    #res_len_ann.sort_index(inplace=True)
     res_len_ann['frac.segs'] = (res_len_ann['num.segs'] / res_len_ann.loc['all']['num.segs']) * 100
     res_len_ann['frac.bp'] = res_len_ann['frac.bp'] * 100
     res_len_ann = res_len_ann.drop(['num.segs', 'num.bp'], axis=1).drop('all')
@@ -178,6 +178,7 @@ def mix_data_matrix(args):
 # Prepare the overlap results in Dataframe
 def overlap(args):
     df = pd.read_csv(args.overlap, sep='\t', header=0, index_col=0)
+    #df.sort_index(inplace=True)
     df = df * 100
     df = df.apply(round).astype(int)
     return df
@@ -195,6 +196,7 @@ def aggregation(args):
     for biotype in BIOTYPES:
         filename = next(x for x in args.aggs if path.basename(path.dirname(x)) == biotype)
         biotype_df = pd.read_csv(filename, index_col=0, sep='\t').apply(to_percent, axis=1).fillna(0)
+        #biotype_df.sort_index(inplace=True)
         biotype_df.columns = column_names
 
         # Update max value
@@ -208,6 +210,7 @@ def get_mne_ticklabels(filename, track_labels=[], label_labels=[]):
     """Parse mne file and return updated tracks and labels"""
 
     mne_df = pd.read_csv(filename, dtype=str, sep='\t')
+    #mne_df.sort_index(inplace=True)
     assert all(col in ['type', 'old', 'new'] for col in mne_df.columns)
 
     track_df = mne_df[mne_df.type == 'track']
@@ -242,7 +245,7 @@ def parse_args(args):
     '''
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--gmtk', default='/scratch/cool_zebrafish_stuff/outdir/results/gmtk_parameters/results.tsv', help='Gmtk parameter results produced by Segway')
-    parser.add_argument('--normalize-gmtk', action='store_true', help='If set, normalize gmtk parameters column wise')
+    parser.add_argument('--normalize-gmtk', action='store_true', default=True, help='If set, normalize gmtk parameters column wise')
     parser.add_argument('--nuc', default='/scratch/cool_zebrafish_stuff/outdir/results/nucleotide/results.tsv', help='Nucleotide results file')
     parser.add_argument('--len_dist', default='/scratch/cool_zebrafish_stuff/outdir/results/length_distribution/results.tsv', help='Length distribution statistics')
     parser.add_argument('--overlap', default='/scratch/cool_zebrafish_stuff/outdir/results/overlap/results.tsv', help='The percentage of segments that overlap with a gene')
@@ -250,7 +253,7 @@ def parse_args(args):
     parser.add_argument('--aggs', 
                         default=['/scratch/cool_zebrafish_stuff/outdir/results/aggregation/gene_biotype/lincRNA/results.tsv', 
                                  '/scratch/cool_zebrafish_stuff/outdir/results/aggregation/gene_biotype/protein_coding/results.tsv'], help='Aggregation results file')
-    parser.add_argument('--stats', default='/scratch/miniconda3/envs/segzoo_env/share/ggd/Danio_rerio/danRer10/rnaseq/gene_biotype/gene_biotype_stats', help='Gene biotype stats')
+    parser.add_argument('--stats', default='/scratch/segzoo_env/share/ggd/Danio_rerio/danRer10/rnaseq/gene_biotype/gene_biotype_stats', help='Gene biotype stats')
     parser.add_argument('--outfile', default='/scratch/cool_zebrafish_stuff/outdir/plots/plot.png', help='The path of the resulting visualization')
     return parser.parse_args(args)
 
@@ -396,7 +399,7 @@ if __name__ == '__main__':
     cbar_overlap.ax.set_yticklabels(['0%', '100%'], fontsize=LABEL_FONTSIZE)
     
     ax_overlap.text(0, -0.6 * FONT_SCALE / 1.5, "Overlap", fontsize=TITLE_FONTSIZE, ha='left', va='bottom')
-
+    ax_overlap.set_xticklabels(ax_overlap.get_xticklabels(), rotation=90, fontsize=LABEL_FONTSIZE)
     ax_overlap.set_title('Bases',
                           fontsize=LABEL_FONTSIZE,
                           position=(0, 1 + 0.6 / 10 * FONT_SCALE / 1.5),
