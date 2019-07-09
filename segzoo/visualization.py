@@ -299,11 +299,11 @@ if __name__ == '__main__':
     n_columns = GMTK_COL + MIX_COL + OVERLAP_COL + AGG_COL
 
     # Create grid with axes following the ratios desired for the dimensions
-    f, (ax_gmtk, ax_mix, ax_overlap, ax_agg) = plt.subplots(1, 4, figsize=(n_columns, n_rows),
-                                                            gridspec_kw={"wspace": 8 / n_columns, "width_ratios": [GMTK_COL,
-                                                                                                                   MIX_COL,
-                                                                                                                   OVERLAP_COL,
-                                                                                                                   AGG_COL]})
+    figure, axes = plt.subplots(1, 4, figsize=(n_columns, n_rows),
+                                gridspec_kw={"wspace": 8 / n_columns,
+                                             "width_ratios": [GMTK_COL, MIX_COL, OVERLAP_COL, AGG_COL]})
+
+    ax_gmtk, ax_mix, ax_overlap, ax_agg = axes
 
     # Read labels from mne file
     if args.mne and not res_gmtk.empty:
@@ -334,7 +334,7 @@ if __name__ == '__main__':
                           position=(0, 1 + 0.6 / res_gmtk.shape[0] * FONT_SCALE / 1.5),
                           ha='left', va='bottom')
     else:
-        f.delaxes(ax_gmtk)
+        figure.delaxes(ax_gmtk)
 
     # Mix matrix
     divider_mix = make_axes_locatable(ax_mix)
@@ -368,7 +368,7 @@ if __name__ == '__main__':
         # Offset labels down to leave space for the table
         dx = 0
         dy = -(TABLE_HEIGHT + 0.25) * 55 / 72
-        offset = ScaledTranslation(dx, dy, f.dpi_scale_trans)
+        offset = ScaledTranslation(dx, dy, figure.dpi_scale_trans)
 
         for label in ax_mix.xaxis.get_majorticklabels():
             label.set_transform(label.get_transform() + offset)
@@ -431,6 +431,6 @@ if __name__ == '__main__':
         cbar_agg.ax.set_yticklabels(['0%', '{:.0f}%'.format(agg_vmax)],
                                     fontsize=LABEL_FONTSIZE)  # the format takes out decimals
     else:
-        f.delaxes(ax_agg)
+        figure.delaxes(ax_agg)
     
-    f.savefig(args.outfile, bbox_inches='tight')
+    figure.savefig(args.outfile, bbox_inches='tight')
