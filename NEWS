@@ -1,4 +1,5 @@
 1.0.5:
+* added option to normalize gmtk parameters table row-wise
 * add genic overlap percentage
 * create gmtk-parameter heatmap from params.params or input.master
 * add mne parameter to change track and segment label labels
