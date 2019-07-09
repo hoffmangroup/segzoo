@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# import pandas as pd
 import sys
 from os import path
 import argparse
@@ -106,7 +105,8 @@ def human_format(num):
         return '{:.1f}{}'.format(num, magnit_chars[magnitude])
 
 def pretty_number(n):
-    """ Add space every three digits from left to right
+    """
+    Add space every three digits from left to right
 
     >>> pretty_number(1000)
     '1 000'
@@ -122,7 +122,7 @@ def gmtk_parameters(args):
         return (col-col.min())/(col.max()-col.min())
 
     df = pd.read_csv(args.gmtk, index_col=0, sep='\t')
-    if bool(args.normalize_gmtk):
+    if args.normalize_gmtk:
         df = df.apply(normalize_col, axis=0)
     return df, [df.max().max(), df.min().min()]
 
@@ -241,33 +241,43 @@ def parse_args(args):
     But you do not have to follow this convention.
     '''
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--gmtk', default='/scratch/cool_zebrafish_stuff/outdir/results/gmtk_parameters/results.tsv', help='Gmtk parameter results produced by Segway')
-    parser.add_argument('--normalize-gmtk', default=True, help='If True, normalize gmtk parameters column wise. Default to True')
-    parser.add_argument('--nuc', default='/scratch/cool_zebrafish_stuff/outdir/results/nucleotide/results.tsv', help='Nucleotide results file')
-    parser.add_argument('--len_dist', default='/scratch/cool_zebrafish_stuff/outdir/results/length_distribution/results.tsv', help='Length distribution statistics')
-    parser.add_argument('--overlap', default='/scratch/cool_zebrafish_stuff/outdir/results/overlap/results.tsv', help='The percentage of segments that overlap with a gene')
+    parser.add_argument('--gmtk', help='Gmtk parameter results produced by Segway')
+    parser.add_argument('--normalize-gmtk', action='store_true', default=True, help='If set, normalize gmtk parameters column wise')
+    parser.add_argument('--nuc', help='Nucleotide results file')
+    parser.add_argument('--len_dist', help='Length distribution statistics')
+    parser.add_argument('--overlap', help='The percentage of segments that overlap with a gene')
     parser.add_argument('--mne', help='Allows specify an mne file to translate segment labels and track names on the shown on the figure')
-    parser.add_argument('--aggs', 
-                        default=['/scratch/cool_zebrafish_stuff/outdir/results/aggregation/gene_biotype/lincRNA/results.tsv', 
-                                 '/scratch/cool_zebrafish_stuff/outdir/results/aggregation/gene_biotype/protein_coding/results.tsv'], help='Aggregation results file')
-    parser.add_argument('--stats', default='/scratch/miniconda3/envs/segzoo_env/share/ggd/Danio_rerio/danRer10/rnaseq/gene_biotype/gene_biotype_stats', help='Gene biotype stats')
-    parser.add_argument('--outfile', default='/scratch/cool_zebrafish_stuff/outdir/plots/plot.png', help='The path of the resulting visualization')
+    parser.add_argument('--aggs', help='Aggregation results file')
+    parser.add_argument('--stats', help='Gene biotype stats')
+    parser.add_argument('--outfile', help='The path of the resulting visualization')
     return parser.parse_args(args)
 
 
 if __name__ == '__main__':
     if 'snakemake' in dir():
-        args = parse_args([
-            '--gmtk', snakemake.input.gmtk,
-            '--normalize-gmtk', str(snakemake.params.normalize_gmtk),
-            '--nuc', snakemake.input.nuc,
-            '--len_dist', snakemake.input.len_dist, 
-            '--overlap', snakemake.input.olp,
-            '--mne', snakemake.input.mne,
-            '--aggs', snakemake.input.aggs,
-            '--stats', snakemake.input.stats,
-            '--outfile', snakemake.output.outfile
-        ])
+        if snakemake.params.normalize_gmtk:
+            args = parse_args([
+                '--gmtk', snakemake.input.gmtk,
+                '--normalize-gmtk',
+                '--nuc', snakemake.input.nuc,
+                '--len_dist', snakemake.input.len_dist,
+                '--overlap', snakemake.input.olp,
+                '--mne', snakemake.input.mne,
+                '--aggs', snakemake.input.aggs,
+                '--stats', snakemake.input.stats,
+                '--outfile', snakemake.output.outfile
+            ])
+        else:
+            args = parse_args([
+                '--gmtk', snakemake.input.gmtk,
+                '--nuc', snakemake.input.nuc,
+                '--len_dist', snakemake.input.len_dist,
+                '--overlap', snakemake.input.olp,
+                '--mne', snakemake.input.mne,
+                '--aggs', snakemake.input.aggs,
+                '--stats', snakemake.input.stats,
+                '--outfile', snakemake.output.outfile
+            ])
     else:
         args = parse_args(sys.argv[1:])
 
@@ -289,11 +299,11 @@ if __name__ == '__main__':
     n_columns = GMTK_COL + MIX_COL + OVERLAP_COL + AGG_COL
 
     # Create grid with axes following the ratios desired for the dimensions
-    f, (ax_gmtk, ax_mix, ax_overlap, ax_agg) = plt.subplots(1, 4, figsize=(n_columns, n_rows),
-                                                            gridspec_kw={"wspace": 8 / n_columns, "width_ratios": [GMTK_COL,
-                                                                                                                   MIX_COL,
-                                                                                                                   OVERLAP_COL,
-                                                                                                                   AGG_COL]})
+    figure, axes = plt.subplots(1, 4, figsize=(n_columns, n_rows),
+                                gridspec_kw={"wspace": 8 / n_columns,
+                                             "width_ratios": [GMTK_COL, MIX_COL, OVERLAP_COL, AGG_COL]})
+
+    ax_gmtk, ax_mix, ax_overlap, ax_agg = axes
 
     # Read labels from mne file
     if args.mne and not res_gmtk.empty:
@@ -309,8 +319,11 @@ if __name__ == '__main__':
         ax_gmtk_cbar = divider_gmtk.append_axes("right", size=0.35, pad=0.3)
         g_gmtk = sns.heatmap(res_gmtk, cmap=cmap_gmtk, ax=ax_gmtk, cbar_ax=ax_gmtk_cbar)
         cbar_gmtk = g_gmtk.collections[0].colorbar
-        cbar_gmtk.set_ticks(gmtk_max_min)
-        cbar_gmtk.ax.set_yticklabels(['col\nmax', 'col\nmin'], fontsize=LABEL_FONTSIZE)
+        if args.normalize_gmtk:
+            cbar_gmtk.set_ticks(gmtk_max_min)
+            cbar_gmtk.ax.set_yticklabels(['col\nmax', 'col\nmin'], fontsize=LABEL_FONTSIZE)
+        else:
+            cbar_gmtk.ax.set_yticklabels(cbar_gmtk.ax.get_yticklabels(), fontsize=LABEL_FONTSIZE)
 
         # Setting titles and axis labels
         ax_gmtk.set_yticklabels(new_labels, rotation=0,
@@ -321,7 +334,7 @@ if __name__ == '__main__':
                           position=(0, 1 + 0.6 / res_gmtk.shape[0] * FONT_SCALE / 1.5),
                           ha='left', va='bottom')
     else:
-        f.delaxes(ax_gmtk)
+        figure.delaxes(ax_gmtk)
 
     # Mix matrix
     divider_mix = make_axes_locatable(ax_mix)
@@ -355,7 +368,7 @@ if __name__ == '__main__':
         # Offset labels down to leave space for the table
         dx = 0
         dy = -(TABLE_HEIGHT + 0.25) * 55 / 72
-        offset = ScaledTranslation(dx, dy, f.dpi_scale_trans)
+        offset = ScaledTranslation(dx, dy, figure.dpi_scale_trans)
 
         for label in ax_mix.xaxis.get_majorticklabels():
             label.set_transform(label.get_transform() + offset)
@@ -381,7 +394,7 @@ if __name__ == '__main__':
     cbar_overlap.ax.set_yticklabels(['0%', '100%'], fontsize=LABEL_FONTSIZE)
     
     ax_overlap.text(0, -0.6 * FONT_SCALE / 1.5, "Overlap", fontsize=TITLE_FONTSIZE, ha='left', va='bottom')
-
+    ax_overlap.set_xticklabels(ax_overlap.get_xticklabels(), rotation=90, fontsize=LABEL_FONTSIZE)
     ax_overlap.set_title('Bases',
                           fontsize=LABEL_FONTSIZE,
                           position=(0, 1 + 0.6 / 10 * FONT_SCALE / 1.5),
@@ -418,6 +431,6 @@ if __name__ == '__main__':
         cbar_agg.ax.set_yticklabels(['0%', '{:.0f}%'.format(agg_vmax)],
                                     fontsize=LABEL_FONTSIZE)  # the format takes out decimals
     else:
-        f.delaxes(ax_agg)
+        figure.delaxes(ax_agg)
     
-    f.savefig(args.outfile, bbox_inches='tight')
+    figure.savefig(args.outfile, bbox_inches='tight')
