@@ -122,6 +122,7 @@ def gmtk_parameters(args):
         return (col-col.min())/(col.max()-col.min())
 
     df = pd.read_csv(args.gmtk, index_col=0, sep='\t')
+    df.sort_index(inplace=True)
     if args.normalize_gmtk:
         df = df.apply(normalize_col, axis=0)
     return df, [df.max().max(), df.min().min()]
@@ -130,6 +131,7 @@ def gmtk_parameters(args):
 # Prepare nucleotide results in a Series format
 def nucleotide(args):
     res_nuc_ann = pd.read_csv(args.nuc, index_col=0, sep='\t')['GC content'].round(2) * 100
+    res_nuc_ann.sort_index(inplace=True)
 
     # Rename columns
     res_nuc_ann = res_nuc_ann.rename('GC content (%)')
@@ -153,6 +155,7 @@ def length_distribution(args):
 
     # Rename columns
     res_len_ann.index = res_len_ann.index.map(int)  # labels need to be strings
+    res_len_ann.sort_index(inplace=True)
     res_len_ann.columns = ['Mean length', 'Median length', 'Std length', 'Base pairs (%)', 'Segments (%)']
 
     res_len_hm = res_len_ann.copy()
@@ -178,6 +181,7 @@ def mix_data_matrix(args):
 # Prepare the overlap results in Dataframe
 def overlap(args):
     df = pd.read_csv(args.overlap, sep='\t', header=0, index_col=0)
+    df.sort_index(inplace=True)
     df = df * 100
     df = df.apply(round).astype(int)
     return df
@@ -195,6 +199,7 @@ def aggregation(args):
     for biotype in BIOTYPES:
         filename = next(x for x in args.aggs if path.basename(path.dirname(x)) == biotype)
         biotype_df = pd.read_csv(filename, index_col=0, sep='\t').apply(to_percent, axis=1).fillna(0)
+        biotype_df.sort_index(inplace=True)
         biotype_df.columns = column_names
 
         # Update max value
@@ -208,6 +213,7 @@ def get_mne_ticklabels(filename, track_labels=[], label_labels=[]):
     """Parse mne file and return updated tracks and labels"""
 
     mne_df = pd.read_csv(filename, dtype=str, sep='\t')
+    mne_df.sort_index(inplace=True)
     assert all(col in ['type', 'old', 'new'] for col in mne_df.columns)
 
     track_df = mne_df[mne_df.type == 'track']
