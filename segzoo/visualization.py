@@ -252,11 +252,15 @@ def parse_args(args):
     """
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--gmtk', help='Gmtk parameter results produced by Segway')
-    parser.add_argument('--normalize-gmtk', action='store_true', default=True, help='If set, normalize gmtk parameters column wise')
+    parser.add_argument('--normalize-gmtk', action='store_true', default=True,
+                        help='If set, normalize gmtk parameters column wise')
+    parser.add_argument('--dendrogram', action='store_true',
+                        help='If set, perform hierarchical clustering of GMTK parameters table row-wise')
     parser.add_argument('--nuc', help='Nucleotide results file')
     parser.add_argument('--len_dist', help='Length distribution statistics')
     parser.add_argument('--overlap', help='The percentage of segments that overlap with a gene')
-    parser.add_argument('--mne', help='Allows specify an mne file to translate segment labels and track names on the shown on the figure')
+    parser.add_argument('--mne', help='Allows specify an mne file to translate segment '
+                                      'labels and track names on the shown on the figure')
     parser.add_argument('--aggs', help='Aggregation results file')
     parser.add_argument('--stats', help='Gene biotype stats')
     parser.add_argument('--outfile', help='The path of the resulting visualization')
@@ -265,6 +269,8 @@ def parse_args(args):
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--gmtk', default='/scratch/cool_zebrafish_stuff/outdir/results/gmtk_parameters/results.tsv', help='Gmtk parameter results produced by Segway')
     parser.add_argument('--normalize-gmtk', action='store_true', default=True, help='If set, normalize gmtk parameters column wise')
+    parser.add_argument('--dendrogram', action='store_true', default=False,
+                        help='If set, perform hierarchical clustering of GMTK parameters table row-wise')
     parser.add_argument('--nuc', default='/scratch/cool_zebrafish_stuff/outdir/results/nucleotide/results.tsv', help='Nucleotide results file')
     parser.add_argument('--len_dist', default='/scratch/cool_zebrafish_stuff/outdir/results/length_distribution/results.tsv', help='Length distribution statistics')
     parser.add_argument('--overlap', default='/scratch/cool_zebrafish_stuff/outdir/results/overlap/results.tsv', help='The percentage of segments that overlap with a gene')
@@ -279,29 +285,21 @@ def parse_args(args):
 
 if __name__ == '__main__':
     if 'snakemake' in dir():
+        arg_list = []
         if snakemake.params.normalize_gmtk:
-            args = parse_args([
-                '--gmtk', snakemake.input.gmtk,
-                '--normalize-gmtk',
-                '--nuc', snakemake.input.nuc,
-                '--len_dist', snakemake.input.len_dist,
-                '--overlap', snakemake.input.olp,
-                '--mne', snakemake.input.mne,
-                '--aggs', snakemake.input.aggs,
-                '--stats', snakemake.input.stats,
-                '--outfile', snakemake.output.outfile
-            ])
-        else:
-            args = parse_args([
-                '--gmtk', snakemake.input.gmtk,
-                '--nuc', snakemake.input.nuc,
-                '--len_dist', snakemake.input.len_dist,
-                '--overlap', snakemake.input.olp,
-                '--mne', snakemake.input.mne,
-                '--aggs', snakemake.input.aggs,
-                '--stats', snakemake.input.stats,
-                '--outfile', snakemake.output.outfile
-            ])
+            arg_list.append('--normalize-gmtk')
+        if snakemake.params.dendrogram:
+            arg_list.append('--dendrogram')
+        arg_list += ['--gmtk', snakemake.input.gmtk,
+                     '--nuc', snakemake.input.nuc,
+                     '--len_dist', snakemake.input.len_dist,
+                     '--overlap', snakemake.input.olp,
+                     '--mne', snakemake.input.mne,
+                     '--aggs', snakemake.input.aggs,
+                     '--stats', snakemake.input.stats,
+                     '--outfile', snakemake.output.outfile
+                     ]
+        args = parse_args(arg_list)
     else:
         args = parse_args(sys.argv[1:])
 
@@ -340,15 +338,19 @@ if __name__ == '__main__':
 
     # GMTK parameters
     if args.gmtk:
-        Z = sch.linkage(res_gmtk, method='weighted')
-        dendrogram = sch.dendrogram(Z, ax=ax_dendrogram, orientation='left',
-                                    color_threshold=0, above_threshold_color='k')
-        ax_dendrogram.axis('off')
-        row_ordering = [int(item) for item in dendrogram['ivl']]
+        if args.dendrogram:
+            Z = sch.linkage(res_gmtk, method='weighted')
+            dendrogram = sch.dendrogram(Z, ax=ax_dendrogram, orientation='left',
+                                        color_threshold=0, above_threshold_color='k')
+            ax_dendrogram.axis('off')
+            row_ordering = [int(item) for item in dendrogram['ivl']]
+            res_gmtk = res_gmtk.loc[row_ordering]
+        else:
+            figure.delaxes(ax_dendrogram)
 
         divider_gmtk = make_axes_locatable(ax_gmtk)
         ax_gmtk_cbar = divider_gmtk.append_axes("right", size=0.35, pad=0.3)
-        g_gmtk = sns.heatmap(res_gmtk.loc[row_ordering], cmap=cmap_gmtk, ax=ax_gmtk, cbar_ax=ax_gmtk_cbar)
+        g_gmtk = sns.heatmap(res_gmtk, cmap=cmap_gmtk, ax=ax_gmtk, cbar_ax=ax_gmtk_cbar)
         cbar_gmtk = g_gmtk.collections[0].colorbar
 
         if args.normalize_gmtk:
@@ -361,7 +363,7 @@ if __name__ == '__main__':
         figure.delaxes(ax_dendrogram)
 
     def sort_by_dendrogram(df):
-        if args.gmtk:
+        if args.gmtk and args.dendrogram:
             return df.loc[row_ordering]
         return df
 
