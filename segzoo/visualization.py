@@ -341,7 +341,8 @@ if __name__ == '__main__':
     # GMTK parameters
     if args.gmtk:
         Z = sch.linkage(res_gmtk, method='weighted')
-        dendrogram = sch.dendrogram(Z, ax=ax_dendrogram, orientation='left')
+        dendrogram = sch.dendrogram(Z, ax=ax_dendrogram, orientation='left',
+                                    color_threshold=0, above_threshold_color='k')
         ax_dendrogram.axis('off')
         row_ordering = [int(item) for item in dendrogram['ivl']]
 
