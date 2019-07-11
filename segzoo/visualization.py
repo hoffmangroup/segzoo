@@ -269,7 +269,7 @@ def parse_args(args):
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--gmtk', default='/scratch/cool_zebrafish_stuff/outdir/results/gmtk_parameters/results.tsv', help='Gmtk parameter results produced by Segway')
     parser.add_argument('--normalize-gmtk', action='store_true', default=True, help='If set, normalize gmtk parameters column wise')
-    parser.add_argument('--dendrogram', action='store_true', default=False,
+    parser.add_argument('--dendrogram', action='store_true', default=True,
                         help='If set, perform hierarchical clustering of GMTK parameters table row-wise')
     parser.add_argument('--nuc', default='/scratch/cool_zebrafish_stuff/outdir/results/nucleotide/results.tsv', help='Nucleotide results file')
     parser.add_argument('--len_dist', default='/scratch/cool_zebrafish_stuff/outdir/results/length_distribution/results.tsv', help='Length distribution statistics')
@@ -341,9 +341,16 @@ if __name__ == '__main__':
         if args.dendrogram:
             Z = sch.linkage(res_gmtk, method='weighted')
             dendrogram = sch.dendrogram(Z, ax=ax_dendrogram, orientation='left',
-                                        color_threshold=0, above_threshold_color='k')
-            ax_dendrogram.axis('off')
+                                        color_threshold=0, above_threshold_color='k',
+                                        leaf_font_size=LABEL_FONTSIZE)
+            ax_dendrogram.spines['right'].set_visible(False)
+            ax_dendrogram.spines['left'].set_visible(False)
+            ax_dendrogram.spines['top'].set_visible(False)
+            ax_dendrogram.spines['bottom'].set_visible(False)
+            ax_dendrogram.set_facecolor((1, 1, 1))    # Set dendrogram background to white
+            ax_dendrogram.set_xticklabels('')
             row_ordering = [int(item) for item in dendrogram['ivl']]
+            row_ordering.reverse()
             res_gmtk = res_gmtk.loc[row_ordering]
         else:
             figure.delaxes(ax_dendrogram)
@@ -358,6 +365,18 @@ if __name__ == '__main__':
             cbar_gmtk.ax.set_yticklabels(['col\nmax', 'col\nmin'], fontsize=LABEL_FONTSIZE)
         else:
             cbar_gmtk.ax.set_yticklabels(cbar_gmtk.ax.get_yticklabels(), fontsize=LABEL_FONTSIZE)
+
+        # Setting titles and axis labels
+        if not args.dendrogram:
+            ax_gmtk.set_yticklabels(new_labels, rotation=0, fontsize=LABEL_FONTSIZE)  # put label names horizontally
+        else:
+            ax_gmtk.set_yticklabels('')
+            ax_gmtk.set_ylabel('')
+        ax_gmtk.set_xticklabels(new_tracks, rotation=90, fontsize=LABEL_FONTSIZE)
+        ax_gmtk.set_title('GMTK parameters',
+                          fontsize=TITLE_FONTSIZE,
+                          position=(0, 1 + 0.6 / res_gmtk.shape[0] * FONT_SCALE / 1.5),
+                          ha='left', va='bottom')
     else:
         figure.delaxes(ax_gmtk)
         figure.delaxes(ax_dendrogram)
@@ -385,15 +404,6 @@ if __name__ == '__main__':
         ax_mix.set_yticklabels([])
     else:
         ax_mix.set_yticklabels(new_labels, rotation=0, fontsize=LABEL_FONTSIZE)
-
-    # Setting titles and axis labels for GMTK parameters
-    ax_gmtk.set_yticklabels(new_labels, rotation=0,
-                            fontsize=LABEL_FONTSIZE)  # put label names horizontally
-    ax_gmtk.set_xticklabels(new_tracks, rotation=90, fontsize=LABEL_FONTSIZE)
-    ax_gmtk.set_title('GMTK parameters',
-                      fontsize=TITLE_FONTSIZE,
-                      position=(0, 1 + 0.6 / res_gmtk.shape[0] * FONT_SCALE / 1.5),
-                      ha='left', va='bottom')
 
     # Add min-max table
     mix_columns = res_mix_hm.shape[1]

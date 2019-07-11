@@ -65,7 +65,7 @@ rule all:
 	output:
 		outfile=join(OUTDIR, PLOTS, PLOTFILE)
 	params:
-		normalize_gmtk=NORMALIZE_GMTK
+		normalize_gmtk=NORMALIZE_GMTK,
 		dendrogram=DENDROGRAM
 	script:
 		"visualization.py"
