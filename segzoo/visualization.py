@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
+import scipy.cluster.hierarchy as sch
+
 from collections import defaultdict
 
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -115,7 +117,6 @@ def pretty_number(n):
     """
     return '{:,}'.format(int(n)).replace(',', ' ')
 
-
 # Prepare the gmtk parameters in a DataFrame
 def gmtk_parameters(args):
     def normalize_col(col):
@@ -154,7 +155,7 @@ def length_distribution(args):
     res_len_ann = res_len_ann.drop(['num.segs', 'num.bp'], axis=1).drop('all')
 
     # Rename columns
-    res_len_ann.index = res_len_ann.index.map(int)  # labels need to be strings
+    res_len_ann.index = res_len_ann.index.map(int)  # labels need to be integers
     res_len_ann.sort_index(inplace=True)
     res_len_ann.columns = ['Mean length', 'Median length', 'Std length', 'Base pairs (%)', 'Segments (%)']
 
@@ -248,42 +249,37 @@ def parse_args(args):
     '''
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--gmtk', help='Gmtk parameter results produced by Segway')
-    parser.add_argument('--normalize-gmtk', action='store_true', default=True, help='If set, normalize gmtk parameters column wise')
+    parser.add_argument('--normalize-gmtk', action='store_true', default=True,
+                        help='If set, normalize gmtk parameters column wise')
+    parser.add_argument('--dendrogram', action='store_true',
+                        help='If set, perform hierarchical clustering of GMTK parameters table row-wise')
     parser.add_argument('--nuc', help='Nucleotide results file')
     parser.add_argument('--len_dist', help='Length distribution statistics')
     parser.add_argument('--overlap', help='The percentage of segments that overlap with a gene')
-    parser.add_argument('--mne', help='Allows specify an mne file to translate segment labels and track names on the shown on the figure')
+    parser.add_argument('--mne', help='Allows specify an mne file to translate segment '
+                                      'labels and track names on the shown on the figure')
     parser.add_argument('--aggs', help='Aggregation results file')
     parser.add_argument('--stats', help='Gene biotype stats')
     parser.add_argument('--outfile', help='The path of the resulting visualization')
     return parser.parse_args(args)
 
-
 if __name__ == '__main__':
     if 'snakemake' in dir():
+        arg_list = []
         if snakemake.params.normalize_gmtk:
-            args = parse_args([
-                '--gmtk', snakemake.input.gmtk,
-                '--normalize-gmtk',
-                '--nuc', snakemake.input.nuc,
-                '--len_dist', snakemake.input.len_dist,
-                '--overlap', snakemake.input.olp,
-                '--mne', snakemake.input.mne,
-                '--aggs', snakemake.input.aggs,
-                '--stats', snakemake.input.stats,
-                '--outfile', snakemake.output.outfile
-            ])
-        else:
-            args = parse_args([
-                '--gmtk', snakemake.input.gmtk,
-                '--nuc', snakemake.input.nuc,
-                '--len_dist', snakemake.input.len_dist,
-                '--overlap', snakemake.input.olp,
-                '--mne', snakemake.input.mne,
-                '--aggs', snakemake.input.aggs,
-                '--stats', snakemake.input.stats,
-                '--outfile', snakemake.output.outfile
-            ])
+            arg_list.append('--normalize-gmtk')
+        if snakemake.params.dendrogram:
+            arg_list.append('--dendrogram')
+        arg_list += ['--gmtk', snakemake.input.gmtk,
+                     '--nuc', snakemake.input.nuc,
+                     '--len_dist', snakemake.input.len_dist,
+                     '--overlap', snakemake.input.olp,
+                     '--mne', snakemake.input.mne,
+                     '--aggs', snakemake.input.aggs,
+                     '--stats', snakemake.input.stats,
+                     '--outfile', snakemake.output.outfile
+                     ]
+        args = parse_args(arg_list)
     else:
         args = parse_args(sys.argv[1:])
 
@@ -296,20 +292,21 @@ if __name__ == '__main__':
     res_agg_dict, agg_vmax = aggregation(args)
 
     # Dimensioning variables
+    DENDROGRAM_COL = 2
     GMTK_COL = res_gmtk.shape[1] * GMTK_FACTOR + 1
     MIX_COL = res_mix_hm.shape[1] * MIX_FACTOR + 1
     OVERLAP_COL = OVERLAP_COLUMN_NUMBER * OVERLAP_FACTOR + 1
     AGG_COL = len(BIOTYPES) * NUM_COMPONENTS * AGG_FACTOR + 1
 
     n_rows = res_mix_hm.shape[0] * ROW_CORRECTOR
-    n_columns = GMTK_COL + MIX_COL + OVERLAP_COL + AGG_COL
+    n_columns = DENDROGRAM_COL + GMTK_COL + MIX_COL + OVERLAP_COL + AGG_COL
 
     # Create grid with axes following the ratios desired for the dimensions
-    figure, axes = plt.subplots(1, 4, figsize=(n_columns, n_rows),
+    figure, axes = plt.subplots(1, 5, figsize=(n_columns, n_rows),
                                 gridspec_kw={"wspace": 8 / n_columns,
-                                             "width_ratios": [GMTK_COL, MIX_COL, OVERLAP_COL, AGG_COL]})
+                                             "width_ratios": [DENDROGRAM_COL, GMTK_COL, MIX_COL, OVERLAP_COL, AGG_COL]})
 
-    ax_gmtk, ax_mix, ax_overlap, ax_agg = axes
+    ax_dendrogram, ax_gmtk, ax_mix, ax_overlap, ax_agg = axes
 
     # Read labels from mne file
     if args.mne and not res_gmtk.empty:
@@ -319,12 +316,40 @@ if __name__ == '__main__':
     else:
         new_tracks, new_labels = (res_gmtk.columns, res_mix_hm.index)
 
+    row_ordering = new_labels
+
     # GMTK parameters
     if args.gmtk:
+        if args.dendrogram:
+            # Row-wise hierarchical clustering with dendrogram
+            row_linkage_matrix = sch.linkage(res_gmtk, method='weighted')
+            row_dendrogram = sch.dendrogram(row_linkage_matrix, ax=ax_dendrogram, orientation='left',
+                                            color_threshold=0, above_threshold_color='k',
+                                            leaf_font_size=LABEL_FONTSIZE)
+            ax_dendrogram.spines['right'].set_visible(False)
+            ax_dendrogram.spines['left'].set_visible(False)
+            ax_dendrogram.spines['top'].set_visible(False)
+            ax_dendrogram.spines['bottom'].set_visible(False)
+            ax_dendrogram.set_facecolor((1, 1, 1))    # Set dendrogram background to white
+            ax_dendrogram.set_xticklabels('')
+            row_ordering = row_dendrogram['leaves']
+            row_ordering.reverse()
+            res_gmtk = res_gmtk.loc[row_ordering]
+
+            # Column-wise hierarchical clustering without dendrogram
+            res_gmtk_transposed = res_gmtk.transpose()
+            col_linkage_matrix = sch.linkage(res_gmtk_transposed, method='weighted')
+            col_dendrogram = sch.dendrogram(col_linkage_matrix, no_plot=True)
+            col_ordering = [res_gmtk.columns[leaf_index] for leaf_index in col_dendrogram['leaves']]
+            res_gmtk = res_gmtk[col_ordering]
+        else:
+            figure.delaxes(ax_dendrogram)
+
         divider_gmtk = make_axes_locatable(ax_gmtk)
         ax_gmtk_cbar = divider_gmtk.append_axes("right", size=0.35, pad=0.3)
         g_gmtk = sns.heatmap(res_gmtk, cmap=cmap_gmtk, ax=ax_gmtk, cbar_ax=ax_gmtk_cbar)
         cbar_gmtk = g_gmtk.collections[0].colorbar
+
         if args.normalize_gmtk:
             cbar_gmtk.set_ticks(gmtk_max_min)
             cbar_gmtk.ax.set_yticklabels(['col\nmax', 'col\nmin'], fontsize=LABEL_FONTSIZE)
@@ -332,8 +357,11 @@ if __name__ == '__main__':
             cbar_gmtk.ax.set_yticklabels(cbar_gmtk.ax.get_yticklabels(), fontsize=LABEL_FONTSIZE)
 
         # Setting titles and axis labels
-        ax_gmtk.set_yticklabels(new_labels, rotation=0,
-                                fontsize=LABEL_FONTSIZE)  # put label names horizontally
+        if not args.dendrogram:
+            ax_gmtk.set_yticklabels(new_labels, rotation=0, fontsize=LABEL_FONTSIZE)  # put label names horizontally
+        else:
+            ax_gmtk.set_yticklabels('')
+            ax_gmtk.set_ylabel('')
         ax_gmtk.set_xticklabels(new_tracks, rotation=90, fontsize=LABEL_FONTSIZE)
         ax_gmtk.set_title('GMTK parameters',
                           fontsize=TITLE_FONTSIZE,
@@ -341,10 +369,13 @@ if __name__ == '__main__':
                           ha='left', va='bottom')
     else:
         figure.delaxes(ax_gmtk)
+        figure.delaxes(ax_dendrogram)
 
     # Mix matrix
     divider_mix = make_axes_locatable(ax_mix)
     ax_mix_cbar = divider_mix.append_axes("right", size=0.35, pad=0.3)
+    res_mix_ann = res_mix_ann.loc[row_ordering]
+    res_mix_hm = res_mix_hm.loc[row_ordering]
     g_mix = sns.heatmap(res_mix_hm, annot=res_mix_ann.applymap(human_format), cbar=True, cmap=cmap_mix, vmin=0, vmax=1,
                         ax=ax_mix, cbar_ax=ax_mix_cbar, fmt='')
     cbar_mix = g_mix.collections[0].colorbar
@@ -353,6 +384,7 @@ if __name__ == '__main__':
     ax_mix.set_ylabel('')
     ax_mix.set_xticklabels(ax_mix.get_xticklabels(), rotation=90, fontsize=LABEL_FONTSIZE)
 
+    # Setting axis labels for the mix matrix
     if args.gmtk:
         ax_mix.set_yticklabels([])
     else:
@@ -393,7 +425,8 @@ if __name__ == '__main__':
     # Overlap
     divider_overlap = make_axes_locatable(ax_overlap)
     ax_overlap_cbar = divider_overlap.append_axes("right", size=0.35, pad=0.3)
-    g_overlap = sns.heatmap(overlap(args), vmin=0, vmax=100, annot=True, cbar=True, fmt='.5g', yticklabels=False, cmap=cmap_overlap, ax=ax_overlap, cbar_ax=ax_overlap_cbar)
+    overlap_hm = overlap(args).loc[row_ordering]
+    g_overlap = sns.heatmap(overlap_hm, vmin=0, vmax=100, annot=True, cbar=True, fmt='.5g', yticklabels=False, cmap=cmap_overlap, ax=ax_overlap, cbar_ax=ax_overlap_cbar)
     
     cbar_overlap = g_overlap.collections[0].colorbar
     cbar_overlap.set_ticks([0, 100])
@@ -414,8 +447,8 @@ if __name__ == '__main__':
     # Divide axes, plot heatmap and edit axis configuration for each biotype
     for biotype in BIOTYPES[1:]:
         ax_agg_aux = divider_agg.append_axes("right", size="100%", pad=0.3)
-        sns.heatmap(res_agg_dict[biotype], annot=True, cbar=False, vmin=0, vmax=agg_vmax, cmap=cmap_agg, ax=ax_agg_aux,
-                    fmt='.5g')
+        sns.heatmap(res_agg_dict[biotype].loc[row_ordering], annot=True, cbar=False, vmin=0, vmax=agg_vmax,
+                    cmap=cmap_agg, ax=ax_agg_aux, fmt='.5g')
         ax_agg_aux.set_title('{} (n={})'.format(biotype, pretty_number(stats_df.loc[biotype, 'genes'])), **title_args)
         ax_agg_aux.set_yticklabels([])
         ax_agg_aux.set_xticklabels(ax_agg_aux.get_xticklabels(), rotation=90, fontsize=LABEL_FONTSIZE)
@@ -424,7 +457,7 @@ if __name__ == '__main__':
         ax_agg_cbar = divider_agg.append_axes("right", size=0.35, pad=0.3)
 
         ax_agg.text(0, -0.6 * FONT_SCALE / 1.5, "Aggregation", fontsize=TITLE_FONTSIZE, ha='left', va='bottom')
-        g_agg = sns.heatmap(res_agg_dict[BIOTYPES[0]], annot=True, cbar=True, vmin=0, vmax=agg_vmax,
+        g_agg = sns.heatmap(res_agg_dict[BIOTYPES[0]].loc[row_ordering], annot=True, cbar=True, vmin=0, vmax=agg_vmax,
                             cbar_ax=ax_agg_cbar,
                             cmap=cmap_agg, ax=ax_agg, fmt='.5g')
         ax_agg.set_title('{} (n={})'.format(BIOTYPES[0], pretty_number(stats_df.loc[BIOTYPES[0], 'genes'])), **title_args)
