@@ -316,6 +316,8 @@ if __name__ == '__main__':
     else:
         new_tracks, new_labels = (res_gmtk.columns, res_mix_hm.index)
 
+    row_ordering = new_labels
+
     # GMTK parameters
     if args.gmtk:
         if args.dendrogram:
@@ -369,16 +371,11 @@ if __name__ == '__main__':
         figure.delaxes(ax_gmtk)
         figure.delaxes(ax_dendrogram)
 
-    def sort_by_dendrogram(df):
-        if args.gmtk and args.dendrogram:
-            return df.loc[row_ordering]
-        return df
-
     # Mix matrix
     divider_mix = make_axes_locatable(ax_mix)
     ax_mix_cbar = divider_mix.append_axes("right", size=0.35, pad=0.3)
-    res_mix_ann = sort_by_dendrogram(res_mix_ann)
-    res_mix_hm = sort_by_dendrogram(res_mix_hm)
+    res_mix_ann = res_mix_ann.loc[row_ordering]
+    res_mix_hm = res_mix_hm.loc[row_ordering]
     g_mix = sns.heatmap(res_mix_hm, annot=res_mix_ann.applymap(human_format), cbar=True, cmap=cmap_mix, vmin=0, vmax=1,
                         ax=ax_mix, cbar_ax=ax_mix_cbar, fmt='')
     cbar_mix = g_mix.collections[0].colorbar
@@ -428,7 +425,7 @@ if __name__ == '__main__':
     # Overlap
     divider_overlap = make_axes_locatable(ax_overlap)
     ax_overlap_cbar = divider_overlap.append_axes("right", size=0.35, pad=0.3)
-    overlap_hm = sort_by_dendrogram(overlap(args))
+    overlap_hm = overlap(args).loc[row_ordering]
     g_overlap = sns.heatmap(overlap_hm, vmin=0, vmax=100, annot=True, cbar=True, fmt='.5g', yticklabels=False, cmap=cmap_overlap, ax=ax_overlap, cbar_ax=ax_overlap_cbar)
     
     cbar_overlap = g_overlap.collections[0].colorbar
@@ -450,7 +447,7 @@ if __name__ == '__main__':
     # Divide axes, plot heatmap and edit axis configuration for each biotype
     for biotype in BIOTYPES[1:]:
         ax_agg_aux = divider_agg.append_axes("right", size="100%", pad=0.3)
-        sns.heatmap(sort_by_dendrogram(res_agg_dict[biotype]), annot=True, cbar=False, vmin=0, vmax=agg_vmax,
+        sns.heatmap(res_agg_dict[biotype].loc[row_ordering], annot=True, cbar=False, vmin=0, vmax=agg_vmax,
                     cmap=cmap_agg, ax=ax_agg_aux, fmt='.5g')
         ax_agg_aux.set_title('{} (n={})'.format(biotype, pretty_number(stats_df.loc[biotype, 'genes'])), **title_args)
         ax_agg_aux.set_yticklabels([])
@@ -460,7 +457,7 @@ if __name__ == '__main__':
         ax_agg_cbar = divider_agg.append_axes("right", size=0.35, pad=0.3)
 
         ax_agg.text(0, -0.6 * FONT_SCALE / 1.5, "Aggregation", fontsize=TITLE_FONTSIZE, ha='left', va='bottom')
-        g_agg = sns.heatmap(sort_by_dendrogram(res_agg_dict[BIOTYPES[0]]), annot=True, cbar=True, vmin=0, vmax=agg_vmax,
+        g_agg = sns.heatmap(res_agg_dict[BIOTYPES[0]].loc[row_ordering], annot=True, cbar=True, vmin=0, vmax=agg_vmax,
                             cbar_ax=ax_agg_cbar,
                             cmap=cmap_agg, ax=ax_agg, fmt='.5g')
         ax_agg.set_title('{} (n={})'.format(BIOTYPES[0], pretty_number(stats_df.loc[BIOTYPES[0], 'genes'])), **title_args)
