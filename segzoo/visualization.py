@@ -125,10 +125,9 @@ def gmtk_parameters(args):
 
     df = pd.read_csv(args.gmtk, index_col=0, sep='\t')
     df.sort_index(inplace=True)
-    linkage_matrix = sch.linkage(df, method='weighted')
     if args.normalize_gmtk:
         df = df.apply(normalize_col, axis=0)
-    return linkage_matrix, df, [df.max().max(), df.min().min()]
+    return df, [df.max().max(), df.min().min()]
 
 
 # Prepare nucleotide results in a Series format
@@ -249,10 +248,9 @@ def parse_args(args):
     If you run Segzoo, outfile would be your_segzoo_folder/outdir/plots/plot.png
     But you do not have to follow this convention.
     '''
-
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--gmtk', help='Gmtk parameter results produced by Segway')
-    parser.add_argument('--normalize-gmtk', action='store_true',
+    parser.add_argument('--normalize-gmtk', action='store_true', default=True,
                         help='If set, normalize gmtk parameters column wise')
     parser.add_argument('--dendrogram', action='store_true',
                         help='If set, perform hierarchical clustering of GMTK parameters table row-wise')
@@ -288,7 +286,7 @@ if __name__ == '__main__':
 
     # Call the functions that obtain the results in DataFrames
     if args.gmtk:
-        linkage_matrix, res_gmtk, gmtk_max_min = gmtk_parameters(args)
+        res_gmtk, gmtk_max_min = gmtk_parameters(args)
     else:
         res_gmtk = pd.DataFrame()
     res_mix_hm, res_mix_ann = mix_data_matrix(args)
@@ -322,6 +320,7 @@ if __name__ == '__main__':
     # GMTK parameters
     if args.gmtk:
         if args.dendrogram:
+            linkage_matrix = sch.linkage(res_gmtk, method='weighted')
             dendrogram = sch.dendrogram(linkage_matrix, ax=ax_dendrogram, orientation='left',
                                         color_threshold=0, above_threshold_color='k',
                                         leaf_font_size=LABEL_FONTSIZE)
