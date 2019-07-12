@@ -76,11 +76,9 @@ rule all:
 rule download_targets:
 	input:
 		#join(BUILDPATH, recipeGTF, fileGTF),  # output for the annotation
-		#RECIPE_FILEPATH['sequence']['filepath'],
-		dynamic("{sequence_filepath}.fa"),
+		RECIPE_FILEPATH['sequence']['filepath'],
 		#join(BUILDPATH, recipeSEQ, fileSEQ),  # output for the sequence
-		#RECIPE_FILEPATH['gtf']['filepath'],
-		dynamic("{gtf_filepath}.gtf.gz"),
+		RECIPE_FILEPATH['gtf']['filepath'],
 		join(BUILDPATH, recipeGTF, "gene_biotype", "gene_biotype_stats")  # gene biotype separation output
 
 	
@@ -88,8 +86,7 @@ rule download_ggd_annotation:
 	input:
 	output:
 		#join(BUILDPATH, recipeGTF, fileGTF)
-		#RECIPE_FILEPATH['gtf']['filepath']
-		dynamic("{gtf_filepath}.gtf.gz")
+		RECIPE_FILEPATH['gtf']['filepath']
 	params:
 		#inter=join(BUILDPATH, recipeGTF, BUILD + ".gtf")
 		recipe=RECIPE_FILEPATH['gtf']['recipe']
@@ -103,8 +100,7 @@ rule download_ggd_sequence:
 	output:
 		#join(BUILDPATH, recipeSEQ, fileSEQ)
 		#"/scratch/miniconda3/envs/segzoo_env/share/ggd/Homo_sapiens/hg38/hg38-reference-genome-ucsc-v1/1/hg38-reference-genome-ucsc-v1.fa"
-		#RECIPE_FILEPATH['sequence']['filepath']
-		dynamic("{sequence_filepath}.fa")
+		RECIPE_FILEPATH['sequence']['filepath']
 	params:
 		recipe=RECIPE_FILEPATH['sequence']['recipe']
 	shell:

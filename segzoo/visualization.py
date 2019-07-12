@@ -330,7 +330,7 @@ if __name__ == '__main__':
             ax_dendrogram.spines['bottom'].set_visible(False)
             ax_dendrogram.set_facecolor((1, 1, 1))    # Set dendrogram background to white
             ax_dendrogram.set_xticklabels('')
-            row_ordering = [int(item) for item in row_dendrogram['ivl']]
+            row_ordering = row_dendrogram['leaves']
             row_ordering.reverse()
             res_gmtk = res_gmtk.loc[row_ordering]
 
@@ -338,8 +338,7 @@ if __name__ == '__main__':
             res_gmtk_transposed = res_gmtk.transpose()
             col_linkage_matrix = sch.linkage(res_gmtk_transposed, method='weighted')
             col_dendrogram = sch.dendrogram(col_linkage_matrix, no_plot=True)
-            col_num = [int(item) for item in col_dendrogram['ivl']]
-            col_ordering = [res_gmtk.columns[index] for index in col_num]
+            col_ordering = [res_gmtk.columns[leaf_index] for leaf_index in col_dendrogram['leaves']]
             res_gmtk = res_gmtk[col_ordering]
         else:
             figure.delaxes(ax_dendrogram)
