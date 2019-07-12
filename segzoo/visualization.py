@@ -248,22 +248,6 @@ def parse_args(args):
     But you do not have to follow this convention.
     '''
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--gmtk', default='/scratch/cool_zebrafish_stuff/outdir/results/gmtk_parameters/results.tsv', help='Gmtk parameter results produced by Segway')
-    parser.add_argument('--normalize-gmtk', action='store_true', default=True, help='If set, normalize gmtk parameters column wise')
-    parser.add_argument('--dendrogram', action='store_true', default=True,
-                        help='If set, perform hierarchical clustering of GMTK parameters table row-wise')
-    parser.add_argument('--nuc', default='/scratch/cool_zebrafish_stuff/outdir/results/nucleotide/results.tsv', help='Nucleotide results file')
-    parser.add_argument('--len_dist', default='/scratch/cool_zebrafish_stuff/outdir/results/length_distribution/results.tsv', help='Length distribution statistics')
-    parser.add_argument('--overlap', default='/scratch/cool_zebrafish_stuff/outdir/results/overlap/results.tsv', help='The percentage of segments that overlap with a gene')
-    parser.add_argument('--mne', help='Allows specify an mne file to translate segment labels and track names on the shown on the figure')
-    parser.add_argument('--aggs',
-                        default=['/scratch/cool_zebrafish_stuff/outdir/results/aggregation/gene_biotype/lincRNA/results.tsv',
-                                 '/scratch/cool_zebrafish_stuff/outdir/results/aggregation/gene_biotype/protein_coding/results.tsv'], help='Aggregation results file')
-    parser.add_argument('--stats', default='/scratch/segzoo_env/share/ggd/Danio_rerio/danRer10/rnaseq/gene_biotype/gene_biotype_stats', help='Gene biotype stats')
-    parser.add_argument('--outfile', default='/scratch/cool_zebrafish_stuff/outdir/plots/plot.png', help='The path of the resulting visualization')
-
-    """
-    parser = argparse.ArgumentParser(description=description, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--gmtk', help='Gmtk parameter results produced by Segway')
     parser.add_argument('--normalize-gmtk', action='store_true', default=True,
                         help='If set, normalize gmtk parameters column wise')
@@ -277,8 +261,6 @@ def parse_args(args):
     parser.add_argument('--aggs', help='Aggregation results file')
     parser.add_argument('--stats', help='Gene biotype stats')
     parser.add_argument('--outfile', help='The path of the resulting visualization')
-    """
-
     return parser.parse_args(args)
 
 if __name__ == '__main__':
