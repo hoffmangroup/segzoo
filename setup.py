@@ -29,7 +29,7 @@ setup(
     ],
     packages=find_packages('.'),
     install_requires=['matplotlib', 'numpy', 'pandas', 'pysam', 'seaborn', 'segtools', 'snakemake', 'pybedtools'],
-    python_requires='>=3.5, <3.7',   # datrie is not supported for python 3.7
+    python_requires='>=3.5',
     package_data={  # Optional
         'segzoo': ['Snakefile'],
     },
