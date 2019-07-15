@@ -1,3 +1,6 @@
+1.0.6:
+* added option to perform hierarchical clustering on gmtk parameters row-wise
+
 1.0.5:
 * fixed the inconsistency in row ordering of dataframes
 * added option to normalize gmtk parameters table row-wise

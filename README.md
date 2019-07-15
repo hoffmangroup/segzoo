@@ -47,6 +47,8 @@ To access the help to know how to run segzoo you can run `segzoo -h` or `segzoo 
 - `--download-only` is an option to support cluster use. Running Segzoo using this argument will only run the downloading rules of the pipeline, and store the data in using the specified prefix. After that, runs on nodes without internet access can be done by specifying that same prefix
 - `--mne` allows specify an `mne` file to translate segment labels and track names on the shown
  on the figure. see `Using mne files` section for details.
+- `--normalize-gmtk` allows normalization of gmtk parameters table row-wise (i.e. across a segmentation label)
+- `--dendrogram` is an option to perform hierarchical clustering of gmtk parameters row-wise
 
 If you are interested in obtaining information on different gene biotypes than *protein coding and lincRNA*, which are the default,
 you can get to the installation folder of segzoo and modify the file `gene_biotypes.py` as you wish.
