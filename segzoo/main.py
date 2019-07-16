@@ -11,7 +11,7 @@ def main(args=sys.argv[1:]):
     default_prefix = path.dirname(path.dirname(path.dirname(path.dirname(here))))
 
     description = '''
-    Run various genomic analysis on a segmentation obtained by segway.
+    Runs various genomic analysis on a segmentation obtained by segway.
     The results of each analysis are made available as well as a summarizing visualization of the results.
     The tool will download all necessary data into a common directory and run all the analysis, storing
     the results in an output directory. All this information is then transformed into a set of tables
