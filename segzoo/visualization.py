@@ -381,7 +381,8 @@ if __name__ == '__main__':
     cbar_mix = g_mix.collections[0].colorbar
     cbar_mix.set_ticks([0, 1])
     cbar_mix.ax.set_yticklabels(['low', 'high'], fontsize=LABEL_FONTSIZE)
-    ax_mix.set_ylabel('')
+    if args.gmtk:
+        ax_mix.set_ylabel('')
     ax_mix.set_xticklabels(ax_mix.get_xticklabels(), rotation=90, fontsize=LABEL_FONTSIZE)
 
     # Setting axis labels for the mix matrix
@@ -431,7 +432,8 @@ if __name__ == '__main__':
     cbar_overlap = g_overlap.collections[0].colorbar
     cbar_overlap.set_ticks([0, 100])
     cbar_overlap.ax.set_yticklabels(['0%', '100%'], fontsize=LABEL_FONTSIZE)
-    
+
+    ax_overlap.set_ylabel('')
     ax_overlap.text(0, -0.6 * FONT_SCALE / 1.5, "Overlap", fontsize=TITLE_FONTSIZE, ha='left', va='bottom')
     ax_overlap.set_xticklabels(ax_overlap.get_xticklabels(), rotation=90, fontsize=LABEL_FONTSIZE)
     ax_overlap.set_title('Bases',
@@ -451,6 +453,7 @@ if __name__ == '__main__':
                     cmap=cmap_agg, ax=ax_agg_aux, fmt='.5g')
         ax_agg_aux.set_title('{} (n={})'.format(biotype, pretty_number(stats_df.loc[biotype, 'genes'])), **title_args)
         ax_agg_aux.set_yticklabels([])
+        ax_agg_aux.set_ylabel('')
         ax_agg_aux.set_xticklabels(ax_agg_aux.get_xticklabels(), rotation=90, fontsize=LABEL_FONTSIZE)
 
     if len(BIOTYPES) > 0:
@@ -462,6 +465,7 @@ if __name__ == '__main__':
                             cmap=cmap_agg, ax=ax_agg, fmt='.5g')
         ax_agg.set_title('{} (n={})'.format(BIOTYPES[0], pretty_number(stats_df.loc[BIOTYPES[0], 'genes'])), **title_args)
         ax_agg.set_yticklabels([])
+        ax_agg.set_ylabel('')
         ax_agg.set_xticklabels(ax_agg.get_xticklabels(), rotation=90, fontsize=LABEL_FONTSIZE)
 
         # Edit the colorbar created by the first biotype
