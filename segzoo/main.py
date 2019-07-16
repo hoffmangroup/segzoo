@@ -46,9 +46,11 @@ def main(args=sys.argv[1:]):
     parsed_args = parser.parse_args(args)
 
     if parsed_args.download_only:
-        snakemake.snakemake(path.join(here, "Snakefile"), targets=["download_targets"], cores=parsed_args.j, config=vars(parsed_args))
+        snakemake.snakemake(path.join(here, "Snakefile"), targets=["download_targets"], cores=parsed_args.j,
+                            config=vars(parsed_args))
 
     else:
-        snakemake.snakemake(path.join(here, "Snakefile"), cores=parsed_args.j, config=vars(parsed_args), unlock=parsed_args.unlock)
+        snakemake.snakemake(path.join(here, "Snakefile"), cores=parsed_args.j, config=vars(parsed_args),
+                            unlock=parsed_args.unlock)
 
     # printreason=True, dryrun=True, printshellcmds=True)

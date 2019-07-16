@@ -28,7 +28,7 @@ setup(
         'Programming Language :: Python :: 3.6'
     ],
     packages=find_packages('.'),
-    install_requires=['matplotlib', 'numpy', 'pandas', 'pysam', 'seaborn', 'segtools', 'snakemake', 'pybedtools'],
+    install_requires=['matplotlib', 'numpy', 'pandas', 'pysam', 'seaborn', 'segtools', 'snakemake', 'pybedtools', 'scipy'],
     python_requires='>=3.5',
     package_data={  # Optional
         'segzoo': ['Snakefile'],
