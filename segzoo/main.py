@@ -22,19 +22,25 @@ def main(args=sys.argv[1:]):
 
     parser.add_argument('--version', action='version', version=__version__)
     parser.add_argument('segmentation', help='.bed.gz file, the segmentation/annotation output from Segway')
-    parser.add_argument('--parameters', default=False,
+    parser.add_argument('--parameters', default=False, metavar='params.params',
                         help='The params.params file used to obtain the gmtk-parameters')
     parser.add_argument('-o', '--outdir', default='outdir', help='Output directory to store all the results')
     parser.add_argument('-j', default=1, metavar='CORES', type=int, help='Number of cores to use')
     parser.add_argument('--species', default='Homo_sapiens', help='Species of the genome used for the segmentation')
     parser.add_argument('--build', default='hg38', help='Build of the genome assembly used for the segmentation')
     parser.add_argument('--prefix', default=default_prefix,
-                        help='Prefix where all the external data is going to be downloaded, followed by /share/ggd/SPECIES/BUILD')
+                        help='Prefix where all the external data is going to be downloaded, followed by '
+                             '/share/ggd/SPECIES/BUILD')
     parser.add_argument('--download-only', action='store_true',
-                        help='Execute only the rules that need internet connection, which store data in a shared directory')
-    parser.add_argument('--mne', help='Allows specify an mne file to translate segment labels and track names on the shown on the figure')
-    parser.add_argument('--normalize-gmtk', action='store_true', help='If set, normalize gmtk parameters column wise')
-    parser.add_argument('--dendrogram', action='store_true', help='If set, perform hierarchical clustering of GMTK parameters table row-wise')
+                        help='Execute only the rules that need internet connection, '
+                             'which store data in a shared directory')
+    parser.add_argument('--mne', metavar='MNE_FILE',
+                        help='Allows specify an mne file to translate segment labels and track names on the shown on '
+                             'the figure')
+    parser.add_argument('--normalize-gmtk', action='store_true',
+                        help='If set, normalize gmtk parameters column wise. Default to True')
+    parser.add_argument('--dendrogram', action='store_true',
+                        help='If set, perform hierarchical clustering of GMTK parameters table row-wise')
     parser.add_argument('--unlock', action='store_true', help='unlock directory (see snakemake doc)')
 
     parsed_args = parser.parse_args(args)
