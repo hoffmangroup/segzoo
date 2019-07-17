@@ -1,5 +1,8 @@
 import pandas as pd
 
+# creates a data frame consisted of genic and intergenic overlap percentage with each segment label
+# and writes it in a tab-delimited file
+
 df = pd.read_csv(snakemake.input.infile, sep='\t', header=1, index_col=0)
 genic_percentage = df['gene']/df['total']
 intergenic_percentage = df['none']/df['total']
