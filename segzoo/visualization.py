@@ -40,7 +40,7 @@ LABEL_FONTSIZE = 20 * FONT_SCALE / 1.5
 TITLE_FONTSIZE = 25 * FONT_SCALE / 1.5
 
 # Table options and properties
-TABLE_POS = "bottom"  # top / bottom / other to ommit
+TABLE_POS = "bottom"  # top / bottom / other to omit
 TABLE_HEIGHT = 1  # relative to the height of 2 rows from the mix matrix
 TABLE_CONTENT = [['max', 'max', 'max', 'max', 'max', 65],
                  ['min', 'min', 'min', 'min', 'min', 35]]
@@ -54,7 +54,7 @@ cmap_overlap = 'Reds'
 
 def is_decimal_zero(num):
     """
-    True if all num's decimals are 0.
+    True if all digits after num's decimal point are 0s.
     False otherwise
 
     >>> is_decimal_zero(12.0)
@@ -65,16 +65,16 @@ def is_decimal_zero(num):
     return int(num) == num
 
 
-def gt_n_ints(num, n_digits=2):
+def more_than_n_digits(num, n_digits=2):
     """
     True if the number num has more than n digits.
     False otherwise
 
-    >>> gt_n_ints(12.123456)
+    >>> more_than_n_digits(12.123456)
     False
-    >>> gt_n_ints(123.123456)
+    >>> more_than_n_digits(123.123456)
     True
-    >>> gt_n_ints(1.23, 1)
+    >>> more_than_n_digits(1.23, 1)
     False
     """
     return len(str(int(num))) > n_digits
@@ -82,7 +82,7 @@ def gt_n_ints(num, n_digits=2):
 
 def human_format(num):
     """
-    Shorten long numbers by replacing trailing intergers by a unit.
+    Shorten long numbers by replacing trailing zeroes by a unit.
 
     >>> human_format(1_000)
     '1k'
@@ -102,19 +102,19 @@ def human_format(num):
         magnitude += 1
         num /= 1000.0
 
-    if gt_n_ints(num) or is_decimal_zero(num):
+    if more_than_n_digits(num) or is_decimal_zero(num):
         return '{}{}'.format(int(num), magnit_chars[magnitude])
     else:
         return '{:.1f}{}'.format(num, magnit_chars[magnitude])
 
 
-def pretty_number(n):
+def prettify_number(n):
     """
     Add space every three digits from left to right
 
-    >>> pretty_number(1000)
+    >>> prettify_number(1000)
     '1 000'
-    >>> pretty_number(100)
+    >>> prettify_number(100)
     '100'
     """
     return '{:,}'.format(int(n)).replace(',', ' ')
@@ -216,7 +216,7 @@ def aggregation(args):
     return df_dict, max_value
 
 
-def get_mne_ticklabels(filename, track_labels=[], label_labels=[]):
+def get_mne_ticklabels(filename, track_labels=[], segment_labels=[]):
     """Parse mne file and return updated tracks and labels"""
 
     mne_df = pd.read_csv(filename, dtype=str, sep='\t')
@@ -231,9 +231,9 @@ def get_mne_ticklabels(filename, track_labels=[], label_labels=[]):
 
     label_df = mne_df[mne_df.type == 'label']
     label_translator = dict(zip(label_df.old, label_df.new))
-    label_labels = map(str, label_labels)
+    segment_labels = map(str, segment_labels)
     new_labels = [label_translator.get(old, old)
-                  for old in label_labels]
+                  for old in segment_labels]
 
     return new_tracks, new_labels
 
@@ -459,7 +459,7 @@ if __name__ == '__main__':
         ax_agg_aux = divider_agg.append_axes("right", size="100%", pad=0.3)
         sns.heatmap(res_agg_dict[biotype].loc[row_ordering], annot=True, cbar=False, vmin=0, vmax=agg_vmax,
                     cmap=cmap_agg, ax=ax_agg_aux, fmt='.5g')
-        ax_agg_aux.set_title('{} (n={})'.format(biotype, pretty_number(stats_df.loc[biotype, 'genes'])), **title_args)
+        ax_agg_aux.set_title('{} (n={})'.format(biotype, prettify_number(stats_df.loc[biotype, 'genes'])), **title_args)
         ax_agg_aux.set_yticklabels([])
         ax_agg_aux.set_ylabel('')
         ax_agg_aux.set_xticklabels(ax_agg_aux.get_xticklabels(), rotation=90, fontsize=LABEL_FONTSIZE)
@@ -471,7 +471,7 @@ if __name__ == '__main__':
         g_agg = sns.heatmap(res_agg_dict[BIOTYPES[0]].loc[row_ordering], annot=True, cbar=True, vmin=0, vmax=agg_vmax,
                             cbar_ax=ax_agg_cbar,
                             cmap=cmap_agg, ax=ax_agg, fmt='.5g')
-        ax_agg.set_title('{} (n={})'.format(BIOTYPES[0], pretty_number(stats_df.loc[BIOTYPES[0], 'genes'])),
+        ax_agg.set_title('{} (n={})'.format(BIOTYPES[0], prettify_number(stats_df.loc[BIOTYPES[0], 'genes'])),
                          **title_args)
         ax_agg.set_yticklabels([])
         ax_agg.set_ylabel('')
