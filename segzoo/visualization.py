@@ -19,8 +19,6 @@ from matplotlib.transforms import ScaledTranslation
 
 from segzoo.gene_biotypes import BIOTYPES
 
-from typing import Tuple, List
-
 mpl.use('Agg')
 
 # VARIABLES AND CONSTANTS
@@ -42,7 +40,7 @@ LABEL_FONTSIZE = 20 * FONT_SCALE / 1.5
 TITLE_FONTSIZE = 25 * FONT_SCALE / 1.5
 
 # Table options and properties
-TABLE_POS = "bottom"  # top / bottom / other to omit
+TABLE_POS = "bottom"  # top / bottom / other to ommit
 TABLE_HEIGHT = 1  # relative to the height of 2 rows from the mix matrix
 TABLE_CONTENT = [['max', 'max', 'max', 'max', 'max', 65],
                  ['min', 'min', 'min', 'min', 'min', 35]]
@@ -54,37 +52,37 @@ cmap_agg = 'Blues'
 cmap_overlap = 'Reds'
 
 
-# HELPER FUNCTIONS
-
-def is_decimal_zero(number: float) -> bool:
+def is_decimal_zero(num):
     """
-    True if all digits after number's decimal point are 0s
+    True if all num's decimals are 0.
+    False otherwise
 
     >>> is_decimal_zero(12.0)
     True
     >>> is_decimal_zero(12.3)
     False
     """
-    return int(number) == number
+    return int(num) == num
 
 
-def more_than_n_digits(number: float, n: int = 2) -> bool:
+def gt_n_ints(num, n_digits=2):
     """
-    True if number has more than n digits
+    True if the number num has more than n digits.
+    False otherwise
 
-    >>> more_than_n_digits(12.123456)
+    >>> gt_n_ints(12.123456)
     False
-    >>> more_than_n_digits(123.123456)
+    >>> gt_n_ints(123.123456)
     True
-    >>> more_than_n_digits(1.23, 1)
+    >>> gt_n_ints(1.23, 1)
     False
     """
-    return len(str(int(number))) > n
+    return len(str(int(num))) > n_digits
 
 
-def human_format(number: float) -> str:
+def human_format(num):
     """
-    Shorten num by replacing zeroes with magnitudes
+    Shorten long numbers by replacing trailing intergers by a unit.
 
     >>> human_format(1_000)
     '1k'
@@ -97,40 +95,35 @@ def human_format(number: float) -> str:
     >>> human_format(1_000_000)
     '1m'
     """
-    magnitude_chars = ['', 'k', 'm', 'g', 't', 'p']
+    magnit_chars = ['', 'k', 'm', 'g', 't', 'p']
 
     magnitude = 0
-    while abs(number) >= 1000:
+    while abs(num) >= 1000:
         magnitude += 1
-        number /= 1000.0
+        num /= 1000.0
 
-    if more_than_n_digits(number) or is_decimal_zero(number):
-        return '{}{}'.format(int(number), magnitude_chars[magnitude])
+    if gt_n_ints(num) or is_decimal_zero(num):
+        return '{}{}'.format(int(num), magnit_chars[magnitude])
     else:
-        return '{:.1f}{}'.format(number, magnitude_chars[magnitude])
+        return '{:.1f}{}'.format(num, magnit_chars[magnitude])
 
 
-def add_space(number: float) -> str:
+def pretty_number(n):
     """
-    Add space to number every three digits from left to right
+    Add space every three digits from left to right
 
     >>> pretty_number(1000)
     '1 000'
     >>> pretty_number(100)
     '100'
     """
-    return '{:,}'.format(int(number)).replace(',', ' ')
+    return '{:,}'.format(int(n)).replace(',', ' ')
 
 
-# LOADING AND PRE-PROCESSING FUNCTIONS
-
-def gmtk_parameters(args: argparse.Namespace) -> Tuple[pd.DataFrame, list]:
-    """
-    Return gmtk parameters in a DataFrame
-    and [dataframe_max, dataframe_min) for visualization purposes
-    """
+# Prepare the gmtk parameters in a DataFrame
+def gmtk_parameters(args):
     def normalize_col(col):
-        return (col-col.min())/(col.max()-col.min())
+        return (col - col.min()) / (col.max() - col.min())
 
     df = pd.read_csv(args.gmtk, index_col=0, sep='\t')
     df.sort_index(inplace=True)
@@ -139,13 +132,8 @@ def gmtk_parameters(args: argparse.Namespace) -> Tuple[pd.DataFrame, list]:
     return df, [df.max().max(), df.min().min()]
 
 
-def nucleotide(args: argparse.Namespace) -> Tuple[pd.Series, pd.Series]:
-    """
-    Return nucleotide results in a Series
-
-    res_nuc_hm is used to generate nucleotide heatmap colours
-    res_nuc_ann is used to annotate nucleotide heatmap
-    """
+# Prepare nucleotide results in a Series format
+def nucleotide(args):
     res_nuc_ann = pd.read_csv(args.nuc, index_col=0, sep='\t')['GC content'].round(2) * 100
     res_nuc_ann.sort_index(inplace=True)
 
@@ -161,13 +149,8 @@ def nucleotide(args: argparse.Namespace) -> Tuple[pd.Series, pd.Series]:
     return res_nuc_hm, res_nuc_ann
 
 
-def length_distribution(args: argparse.Namespace) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """
-    Return length_distribution results in a DataFrame
-
-    res_len_hm is used to generate length distribution heatmap colours
-    res_len_ann is used to annotate length distribution heatmap
-    """
+# Prepare length_distribution results in a DataFrame
+def length_distribution(args):
     # Preparing the annotation for the matrix, creating a new column called 'frac.segs'
     res_len_ann = pd.read_csv(args.len_dist, index_col=0, sep='\t')
     res_len_ann['frac.segs'] = (res_len_ann['num.segs'] / res_len_ann.loc['all']['num.segs']) * 100
@@ -188,13 +171,8 @@ def length_distribution(args: argparse.Namespace) -> Tuple[pd.DataFrame, pd.Data
     return res_len_hm, res_len_ann
 
 
-def mix_data_matrix(args: argparse.Namespace) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """
-    Return the mix matrix (nucleotide + length distribution) for nucleotide and length distribution results
-
-    res_hm is used to generate mix matrix heatmap colours
-    res_ann is used to annotate mix matrix heatmap
-    """
+# Prepare the mix matrix for the heatmap and its annotation, both in DataFrames
+def mix_data_matrix(args):
     # Joining the matrices to create final heatmap and annotation
     res_nuc_hm, res_nuc_ann = nucleotide(args)
     res_len_hm, res_len_ann = length_distribution(args)
@@ -205,12 +183,8 @@ def mix_data_matrix(args: argparse.Namespace) -> Tuple[pd.DataFrame, pd.DataFram
     return res_hm, res_ann
 
 
-def overlap(args: argparse.Namespace) -> pd.DataFrame:
-    """
-    Return the overlap results in Dataframe
-
-    df is used for both overlap heatmap colour generation and annotation
-    """
+# Prepare the overlap results in Dataframe
+def overlap(args):
     df = pd.read_csv(args.overlap, sep='\t', header=0, index_col=0)
     df.sort_index(inplace=True)
     df = df * 100
@@ -218,13 +192,11 @@ def overlap(args: argparse.Namespace) -> pd.DataFrame:
     return df
 
 
-def aggregation(args: argparse.Namespace) -> Tuple[dict, int]:
-    """
-    Return the aggregation results in a dictionary {gene_biotype: gene_biotype_aggregation_dataframe}
-    and the maximum value out of all the DataFrames for visualization purposes
-    """
+# Prepare the aggregation results in a dictionary of DataFrames by gene_biotype and return the maximum value
+def aggregation(args):
     # Rename columns
-    column_names = ["5' flanking", "initial exon", "initial intron", "internal exon", "internal introns", "terminal exon", "terminal intron", "3' flanking"]
+    column_names = ["5' flanking", "initial exon", "initial intron", "internal exon", "internal introns",
+                    "terminal exon", "terminal intron", "3' flanking"]
 
     def to_percent(row):
         return (row / row.sum()).round(2) * 100
@@ -244,13 +216,10 @@ def aggregation(args: argparse.Namespace) -> Tuple[dict, int]:
     return df_dict, max_value
 
 
-def get_mne_ticklabels(mne_file: str,
-                       track_labels: List[str] = [],
-                       segmentation_labels: List[int] = []) -> Tuple[list, list]:
-    """
-    Return new tracks and segment labels translated using mne_file
-    """
-    mne_df = pd.read_csv(mne_file, dtype=str, sep='\t')
+def get_mne_ticklabels(filename, track_labels=[], label_labels=[]):
+    """Parse mne file and return updated tracks and labels"""
+
+    mne_df = pd.read_csv(filename, dtype=str, sep='\t')
     mne_df.sort_index(inplace=True)
     assert all(col in ['type', 'old', 'new'] for col in mne_df.columns)
 
@@ -262,9 +231,9 @@ def get_mne_ticklabels(mne_file: str,
 
     label_df = mne_df[mne_df.type == 'label']
     label_translator = dict(zip(label_df.old, label_df.new))
-    segmentation_labels = map(str, segmentation_labels)
+    label_labels = map(str, label_labels)
     new_labels = [label_translator.get(old, old)
-                  for old in segmentation_labels]
+                  for old in label_labels]
 
     return new_tracks, new_labels
 
@@ -274,13 +243,13 @@ def parse_args(args):
     description = '''
     By running visualization.py directly, you are asked to specify the local results files as parameters.
     This enables fast generation of desired plots. 
-    
+
     If you generated these results using Segzoo, they should be in the folder where your segzoo has been installed, 
     and under /outdir/results/
-    
+
     In many cases, stats would be in your Segzoo environment, for example,
     segzoo_env/share/ggd/Homo_sapiens/hg38/rnaseq/gene_biotype/gene_biotype_stats
-    
+
     If you run Segzoo, outfile would be your_segzoo_folder/outdir/plots/plot.png
     But you do not have to follow this convention.
     '''
@@ -299,6 +268,7 @@ def parse_args(args):
     parser.add_argument('--stats', help='Gene biotype stats')
     parser.add_argument('--outfile', help='The path of the resulting visualization')
     return parser.parse_args(args)
+
 
 if __name__ == '__main__':
     if 'snakemake' in dir():
@@ -367,7 +337,7 @@ if __name__ == '__main__':
             ax_dendrogram.spines['left'].set_visible(False)
             ax_dendrogram.spines['top'].set_visible(False)
             ax_dendrogram.spines['bottom'].set_visible(False)
-            ax_dendrogram.set_facecolor((1, 1, 1))    # Set dendrogram background to white
+            ax_dendrogram.set_facecolor((1, 1, 1))  # Set dendrogram background to white
             ax_dendrogram.set_xticklabels('')
             row_ordering = row_dendrogram['leaves']
             row_ordering.reverse()
@@ -439,7 +409,7 @@ if __name__ == '__main__':
             fontsize=LABEL_FONTSIZE,
             cellLoc='center')
         for j in range(mix_columns):
-            high_low_table._cells[(0, j)]._text.set_color('white')   # TODO: do not access protected variables
+            high_low_table._cells[(0, j)]._text.set_color('white')  # TODO: do not access protected variables
 
         # Offset labels down to leave space for the table
         dx = 0
@@ -458,14 +428,15 @@ if __name__ == '__main__':
             cellLoc='center')
         # TODO: try to not iterate through every text. change colour by row
         for j in range(mix_columns):
-            high_low_table._cells[(0, j)]._text.set_color('white')   # TODO: do not access protected variables
-    
+            high_low_table._cells[(0, j)]._text.set_color('white')  # TODO: do not access protected variables
+
     # Overlap
     divider_overlap = make_axes_locatable(ax_overlap)
     ax_overlap_cbar = divider_overlap.append_axes("right", size=0.35, pad=0.3)
     overlap_hm = overlap(args).loc[row_ordering]
-    g_overlap = sns.heatmap(overlap_hm, vmin=0, vmax=100, annot=True, cbar=True, fmt='.5g', yticklabels=False, cmap=cmap_overlap, ax=ax_overlap, cbar_ax=ax_overlap_cbar)
-    
+    g_overlap = sns.heatmap(overlap_hm, vmin=0, vmax=100, annot=True, cbar=True, fmt='.5g', yticklabels=False,
+                            cmap=cmap_overlap, ax=ax_overlap, cbar_ax=ax_overlap_cbar)
+
     cbar_overlap = g_overlap.collections[0].colorbar
     cbar_overlap.set_ticks([0, 100])
     cbar_overlap.ax.set_yticklabels(['0%', '100%'], fontsize=LABEL_FONTSIZE)
@@ -474,10 +445,10 @@ if __name__ == '__main__':
     ax_overlap.text(0, -0.6 * FONT_SCALE / 1.5, "Overlap", fontsize=TITLE_FONTSIZE, ha='left', va='bottom')
     ax_overlap.set_xticklabels(ax_overlap.get_xticklabels(), rotation=90, fontsize=LABEL_FONTSIZE)
     ax_overlap.set_title('Bases',
-                          fontsize=LABEL_FONTSIZE,
-                          position=(0, 1 + 0.6 / 10 * FONT_SCALE / 1.5),
-                          ha='left', va='bottom')
-    
+                         fontsize=LABEL_FONTSIZE,
+                         position=(0, 1 + 0.6 / 10 * FONT_SCALE / 1.5),
+                         ha='left', va='bottom')
+
     # Aggregation
     stats_df = pd.read_csv(args.stats, index_col=0, sep='\t')  # data stored when creating the gtf files
     divider_agg = make_axes_locatable(ax_agg)
@@ -488,7 +459,7 @@ if __name__ == '__main__':
         ax_agg_aux = divider_agg.append_axes("right", size="100%", pad=0.3)
         sns.heatmap(res_agg_dict[biotype].loc[row_ordering], annot=True, cbar=False, vmin=0, vmax=agg_vmax,
                     cmap=cmap_agg, ax=ax_agg_aux, fmt='.5g')
-        ax_agg_aux.set_title('{} (n={})'.format(biotype, add_space(stats_df.loc[biotype, 'genes'])), **title_args)
+        ax_agg_aux.set_title('{} (n={})'.format(biotype, pretty_number(stats_df.loc[biotype, 'genes'])), **title_args)
         ax_agg_aux.set_yticklabels([])
         ax_agg_aux.set_ylabel('')
         ax_agg_aux.set_xticklabels(ax_agg_aux.get_xticklabels(), rotation=90, fontsize=LABEL_FONTSIZE)
@@ -500,7 +471,8 @@ if __name__ == '__main__':
         g_agg = sns.heatmap(res_agg_dict[BIOTYPES[0]].loc[row_ordering], annot=True, cbar=True, vmin=0, vmax=agg_vmax,
                             cbar_ax=ax_agg_cbar,
                             cmap=cmap_agg, ax=ax_agg, fmt='.5g')
-        ax_agg.set_title('{} (n={})'.format(BIOTYPES[0], add_space(stats_df.loc[BIOTYPES[0], 'genes'])), **title_args)
+        ax_agg.set_title('{} (n={})'.format(BIOTYPES[0], pretty_number(stats_df.loc[BIOTYPES[0], 'genes'])),
+                         **title_args)
         ax_agg.set_yticklabels([])
         ax_agg.set_ylabel('')
         ax_agg.set_xticklabels(ax_agg.get_xticklabels(), rotation=90, fontsize=LABEL_FONTSIZE)
@@ -512,5 +484,5 @@ if __name__ == '__main__':
                                     fontsize=LABEL_FONTSIZE)  # the format takes out decimals
     else:
         figure.delaxes(ax_agg)
-    
+
     figure.savefig(args.outfile, bbox_inches='tight')
