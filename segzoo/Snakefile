@@ -48,9 +48,10 @@ BUILD_RECIPE_MAPPING = {
 				  'filepath': join(PREFIX, 'share/ggd/Danio_rerio/danRer10/danrer10-gtf-ensembl-v1/1/danrer10-gtf-ensembl-v1.gtf.gz')}}
 }
 
-RECIPE_FILEPATH = BUILD_RECIPE_MAPPING[BUILD]  # Temporary variable
+RECIPE_FILEPATH = BUILD_RECIPE_MAPPING[BUILD]
 
 preprocessed_segmentation = join(OUTDIR, DATA,"segmentation", "segmentation.pkl.gz")
+
 
 # Main rule that sets the targets to obtain
 rule all:
@@ -72,41 +73,32 @@ rule all:
 
 
 # DOWNLOADING RULES
+
 # GGD conda installations into the anaconda environment folder
 rule download_targets:
 	input:
-		#join(BUILDPATH, recipeGTF, fileGTF),  # output for the annotation
 		RECIPE_FILEPATH['sequence']['filepath'],
-		#join(BUILDPATH, recipeSEQ, fileSEQ),  # output for the sequence
 		RECIPE_FILEPATH['gtf']['filepath'],
 		join(BUILDPATH, recipeGTF, "gene_biotype", "gene_biotype_stats")  # gene biotype separation output
 
-	
 rule download_ggd_annotation:
 	input:
 	output:
-		#join(BUILDPATH, recipeGTF, fileGTF)
 		RECIPE_FILEPATH['gtf']['filepath']
 	params:
-		#inter=join(BUILDPATH, recipeGTF, BUILD + ".gtf")
 		recipe=RECIPE_FILEPATH['gtf']['recipe']
 	shell:
-		#"conda install -p {PREFIX} -y {QUIET} {CLOBBER} -c ggd-alpha {BUILD}-gtf;"
-		#"gzip {params.inter}"
 		"conda install -p {PREFIX} -y {QUIET} {CLOBBER} -c ggd-genomics {params.recipe}"
 
 rule download_ggd_sequence:
 	input:
 	output:
-		#join(BUILDPATH, recipeSEQ, fileSEQ)
-		#"/scratch/miniconda3/envs/segzoo_env/share/ggd/Homo_sapiens/hg38/hg38-reference-genome-ucsc-v1/1/hg38-reference-genome-ucsc-v1.fa"
 		RECIPE_FILEPATH['sequence']['filepath']
 	params:
 		recipe=RECIPE_FILEPATH['sequence']['recipe']
 	shell:
-		#"conda install -p {PREFIX} -y {QUIET} {CLOBBER} -c ggd-alpha {BUILD}-sequence"
-		#"ggd install hg38-reference-genome-ucsc-v1"
 		"conda install -p {PREFIX} -y {QUIET} {CLOBBER} -c ggd-genomics {params.recipe}"
+
 
 # PREPROCESSING RULES
 
@@ -148,7 +140,6 @@ rule run_segtools_gmtk_parameters:
 	script:
 		"create_gmtk_results.py"
 
-
 # Segtools Aggregation results obtention, general and by gene_biotype
 rule run_segtools_aggregation_general:
 	input:
@@ -189,7 +180,6 @@ rule create_aggregation_results_gene_biotype:
 	script:
 		"create_aggregation_results.py"
 
-
 # Segtools Length Distribution execution and results creation
 # TODO: Don't just copy, preprocess for easier obtention of results
 rule run_segtools_length_distribution:
@@ -203,7 +193,6 @@ rule run_segtools_length_distribution:
 	shell:
 		"segtools-length-distribution {QUIET} {CLOBBER} {NOPLOT} --outdir {params.outdir} {preprocessed_segmentation};"
 		"cp {output[0]} {output[1]}"
-
 
 # Segtools Feature Distance execution for general file and gene_biotype
 rule run_segtools_feature_distance_general:
@@ -230,7 +219,6 @@ rule run_segtools_feature_distance_gene_biotype:
 		outdir=join(OUTDIR, DATA, "feature_distance", "gene_biotype", "{biotype}")
 	shell:
 		"segtools-feature-distance {QUIET} {CLOBBER} {NOPLOT} --outdir {params.outdir} {preprocessed_segmentation} {input.gtf} > {output.outfile}"
-
 
 # Bedtools nucleotide results obtention
 rule run_bedtools_nuc:
@@ -270,6 +258,7 @@ rule create_overlap_results:
 		outfile=join(OUTDIR, RESULTS, "overlap", RESULTFILE)
 	script:
 		"create_overlap_results.py"
+
 
 # Visualization
 

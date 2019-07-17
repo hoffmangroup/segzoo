@@ -216,9 +216,8 @@ def aggregation(args):
     return df_dict, max_value
 
 
+# Parse mne file and return updated tracks and labels
 def get_mne_ticklabels(filename, track_labels=[], segment_labels=[]):
-    """Parse mne file and return updated tracks and labels"""
-
     mne_df = pd.read_csv(filename, dtype=str, sep='\t')
     mne_df.sort_index(inplace=True)
     assert all(col in ['type', 'old', 'new'] for col in mne_df.columns)
@@ -253,6 +252,8 @@ def parse_args(args):
     If you run Segzoo, outfile would be your_segzoo_folder/outdir/plots/plot.png
     But you do not have to follow this convention.
     '''
+
+    # TODO: change parameters after interface checking feedback
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--gmtk', help='Gmtk parameter results produced by Segway')
     parser.add_argument('--normalize-gmtk', action='store_true', default=True,
