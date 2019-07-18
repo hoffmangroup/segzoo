@@ -120,8 +120,10 @@ def prettify_number(n):
     return '{:,}'.format(int(n)).replace(',', ' ')
 
 
-# Prepare the gmtk parameters in a DataFrame
 def gmtk_parameters(args):
+    """
+    Prepare the gmtk parameters in a DataFrame
+    """
     def normalize_col(col):
         return (col - col.min()) / (col.max() - col.min())
 
@@ -132,8 +134,10 @@ def gmtk_parameters(args):
     return df, [df.max().max(), df.min().min()]
 
 
-# Prepare nucleotide results in a Series format
 def nucleotide(args):
+    """
+    Prepare nucleotide results in a Series format
+    """
     res_nuc_ann = pd.read_csv(args.nuc, index_col=0, sep='\t')['GC content'].round(2) * 100
     res_nuc_ann.sort_index(inplace=True)
 
@@ -149,8 +153,10 @@ def nucleotide(args):
     return res_nuc_hm, res_nuc_ann
 
 
-# Prepare length_distribution results in a DataFrame
 def length_distribution(args):
+    """
+    Prepare length_distribution results in a DataFrame
+    """
     # Preparing the annotation for the matrix, creating a new column called 'frac.segs'
     res_len_ann = pd.read_csv(args.len_dist, index_col=0, sep='\t')
     res_len_ann['frac.segs'] = (res_len_ann['num.segs'] / res_len_ann.loc['all']['num.segs']) * 100
@@ -171,8 +177,10 @@ def length_distribution(args):
     return res_len_hm, res_len_ann
 
 
-# Prepare the mix matrix for the heatmap and its annotation, both in DataFrames
 def mix_data_matrix(args):
+    """
+    Prepare the mix matrix for the heatmap and its annotation, both in DataFrames
+    """
     # Joining the matrices to create final heatmap and annotation
     res_nuc_hm, res_nuc_ann = nucleotide(args)
     res_len_hm, res_len_ann = length_distribution(args)
@@ -183,8 +191,10 @@ def mix_data_matrix(args):
     return res_hm, res_ann
 
 
-# Prepare the overlap results in Dataframe
 def overlap(args):
+    """
+    Prepare the overlap results in Dataframe
+    """
     df = pd.read_csv(args.overlap, sep='\t', header=0, index_col=0)
     df.sort_index(inplace=True)
     df = df * 100
@@ -192,8 +202,10 @@ def overlap(args):
     return df
 
 
-# Prepare the aggregation results in a dictionary of DataFrames by gene_biotype and return the maximum value
 def aggregation(args):
+    """
+    Prepare the aggregation results in a dictionary of DataFrames by gene_biotype and return the maximum value
+    """
     # Rename columns
     column_names = ["5' flanking", "initial exon", "initial intron", "internal exon", "internal introns",
                     "terminal exon", "terminal intron", "3' flanking"]
@@ -216,8 +228,10 @@ def aggregation(args):
     return df_dict, max_value
 
 
-# Parse mne file and return updated tracks and labels
 def get_mne_ticklabels(filename, track_labels=[], label_labels=[]):
+    """
+    Parse mne file and return updated tracks and labels
+    """
     mne_df = pd.read_csv(filename, dtype=str, sep='\t')
     mne_df.sort_index(inplace=True)
     assert all(col in ['type', 'old', 'new'] for col in mne_df.columns)
@@ -237,8 +251,11 @@ def get_mne_ticklabels(filename, track_labels=[], label_labels=[]):
     return new_tracks, new_labels
 
 
-# parse arguments
 def parse_args(args):
+    """
+    Parse command line arguments and return them as a Namespace object
+    """
+
     description = '''
     By running visualization.py directly, you are asked to specify the local results files as parameters.
     This enables fast generation of desired plots. 
