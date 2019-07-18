@@ -4,17 +4,16 @@
 
 Segzoo is a tool that allows to automatically run various genomic analysis on a segmentation obtained with Segway.
 The results of each analysis are made available as well as a summarizing visualization of the results.
-The requirements for this tool include segtools, bedtools and python packages. These are dependencies that will be taken care of during installation.
+The requirements for this tool include segtools, bedtools and python packages, but all of them are dependencies that will be taken care of during installation.
 
 ## Quick start
 
 This quick start needs you to have anaconda already installed in your local computer (either with python 2 or 3).
 
 1. Download the test [segmentation](https://segway.hoffmanlab.org/2018/protocol/trackhub/hg38/segway.bed.gz) and [GMTK parameters](https://segway.hoffmanlab.org/2018/protocol/params/params.params) and move them both in a directory called, for example, `segzoo`
-2. Open a terminal in the mentioned directory and run `conda create -c bioconda -n segzoo_env python=3.7`
-3. After the last command has finished, run `conda activate segzoo_env`
-4. Run `CFLAGS="-I${CONDA_PREFIX}/include"` followed by `pip install segzoo`
-4. When finished, run `segzoo segway.bed.gz --params params.params`
+2. Open a terminal in the mentioned directory and run `conda create -c bioconda -n python3 python=3.6 r-base r-latticeextra r-reshape2 r-cairo r-cluster bedtools -y`
+3. After the last command has finished, run `source activate python3` followed by `pip install segzoo`
+4. When finished, run `segzoo segway.bed.gz --parameters params.params`
 5. After around 30 min, the resulting visualization will be stored in the current's directory `outdir/plots` folder
 
 

@@ -25,10 +25,11 @@ setup(
         "Topic :: Scientific/Engineering :: Bio-Informatics",
         "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6'
+        'Programming Language :: Python :: 3.7'
     ],
     packages=find_packages('.'),
-    install_requires=['matplotlib=3.1.0', 'numpy', 'pandas', 'pysam', 'seaborn', 'segtools', 'snakemake', 'pybedtools', 'scipy'],
+    install_requires=['matplotlib==3.1.0', 'numpy', 'pandas', 'pysam',
+                      'seaborn', 'segtools', 'snakemake', 'pybedtools', 'scipy'],
     python_requires='>=3.5',
     package_data={  # Optional
         'segzoo': ['Snakefile'],
