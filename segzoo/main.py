@@ -19,6 +19,7 @@ def get_current_conda_env():
 
 
 def main(args=sys.argv[1:]):
+    here = path.abspath(path.dirname(__file__))
 
     description = '''
     Segzoo is a tool that allows to run various genomic analysis on a segmentation obtained by segway.
