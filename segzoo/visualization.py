@@ -82,7 +82,7 @@ def more_than_n_digits(num, n_digits=2):
 
 def human_format(num):
     """
-    Shorten long numbers by replacing trailing zeroes by a unit.
+    Shorten long numbers by replacing ending zeroes by a magnitude unit.
 
     >>> human_format(1_000)
     '1k'
@@ -217,7 +217,7 @@ def aggregation(args):
 
 
 # Parse mne file and return updated tracks and labels
-def get_mne_ticklabels(filename, track_labels=[], segment_labels=[]):
+def get_mne_ticklabels(filename, track_labels=[], label_labels=[]):
     mne_df = pd.read_csv(filename, dtype=str, sep='\t')
     mne_df.sort_index(inplace=True)
     assert all(col in ['type', 'old', 'new'] for col in mne_df.columns)
@@ -230,9 +230,9 @@ def get_mne_ticklabels(filename, track_labels=[], segment_labels=[]):
 
     label_df = mne_df[mne_df.type == 'label']
     label_translator = dict(zip(label_df.old, label_df.new))
-    segment_labels = map(str, segment_labels)
+    label_labels = map(str, label_labels)
     new_labels = [label_translator.get(old, old)
-                  for old in segment_labels]
+                  for old in label_labels]
 
     return new_tracks, new_labels
 
