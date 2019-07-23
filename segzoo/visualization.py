@@ -321,7 +321,7 @@ if __name__ == '__main__':
 
     # Dimensioning variables
     DENDROGRAM_COL = 2
-    DENDROGRAM_LABELS_COL = args.show_dendro_labels
+    DENDROGRAM_LABELS_COL = int(args.dendro_space)
     GMTK_COL = res_gmtk.shape[1] * GMTK_FACTOR + 1
     MIX_COL = res_mix_hm.shape[1] * MIX_FACTOR + 1
     OVERLAP_COL = OVERLAP_COLUMN_NUMBER * OVERLAP_FACTOR + 1
