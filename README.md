@@ -8,14 +8,27 @@ The requirements for this tool include segtools, bedtools and python packages, b
 
 ## Quick start
 
-This quick start needs you to have anaconda already installed in your local computer (either with python 2 or 3).
+### Setting up environment
 
-1. Download the test [segmentation](https://segway.hoffmanlab.org/2018/protocol/trackhub/hg38/segway.bed.gz) and [GMTK parameters](https://segway.hoffmanlab.org/2018/protocol/params/params.params) and move them both in a directory called, for example, `segzoo`
-2. Open a terminal in the mentioned directory and run `conda create -c bioconda -n python3 python=3.6 r-base r-latticeextra r-reshape2 r-cairo r-cluster bedtools -y`
-3. After the last command has finished, run `source activate python3` followed by `pip install segzoo`
-4. When finished, run `segzoo segway.bed.gz --parameters params.params`
-5. After around 30 min, the resulting visualization will be stored in the current's directory `outdir/plots` folder
+This quick start needs you to have anaconda already installed in your local computer
+1. Create a conda environment by running `conda create -c conda-forge -c r -c bioconda --name segzoo_env python=3.7 matplotlib=3.1.0 segtools=1.2.2`. If you are running the latest version of Segzoo (1.0.6), you can leave out `matplotlib=3.1.0`
+2. Activate the environment by running `conda activate segzoo_env`
 
+### Installing Segzoo (1.0.4)
+Run `pip install segzoo`
+
+### Installing Segzoo (1.0.6)
+1. Clone the Segzoo repository by running `hg clone https://bitbucket.org/hoffmanlab/segzoo` in your terminal 
+2. This creates a `segzoo` folder in your current directory, go to that folder by running `cd segzoo`
+3. Install Segzoo by running `python setup.py develop`
+
+### Running Segzoo
+1. Run `segzoo --help` and check if a help message is returned. If you run into an error and are sure to have performed the above steps correctly, raise an issue on our [issue page](https://bitbucket.org/hoffmanlab/segzoo/issues?status=new&status=open)
+1. If `segzoo --help` ran properly, download the test [segmentation](https://segway.hoffmanlab.org/2018/protocol/trackhub/hg38/segway.bed.gz) and [GMTK parameters](https://segway.hoffmanlab.org/2018/protocol/params/params.params) 
+2. Move both files in a directory called, for example, `segzoo_data`. Then, `cd segzoo_data`
+3. Run `segzoo segway.bed.gz --parameters params.params`
+
+The resulting visualization will be stored in the current's directory `outdir/plots` folder
 
 ## How to install
 

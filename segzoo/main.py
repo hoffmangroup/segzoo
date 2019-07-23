@@ -40,12 +40,19 @@ def main(args=sys.argv[1:]):
     parser.add_argument('--species', default='Homo_sapiens', help='Species of the genome used for the segmentation')
     parser.add_argument('--build', default='hg38', help='Build of the genome assembly used for the segmentation')
     parser.add_argument('--prefix', default=get_current_conda_env(),
-                        help='Prefix where all the external data is going to be downloaded, followed by /share/ggd/SPECIES/BUILD')
+                        help='Prefix where all the external data is going to be downloaded, followed by '
+                             '/share/ggd/SPECIES/BUILD')
     parser.add_argument('--download-only', action='store_true',
-                        help='Execute only the rules that need internet connection, which store data in a shared directory')
-    parser.add_argument('--mne', help='Allows specify an mne file to translate segment labels and track names on the shown on the figure')
+                        help='Execute only the rules that need internet connection, which store data in a shared '
+                             'directory')
+    parser.add_argument('--mne', help='Allows specify an mne file to translate segment labels and track names on the '
+                                      'shown on the figure')
     parser.add_argument('--normalize-gmtk', action='store_true', help='If set, normalize gmtk parameters column wise')
-    parser.add_argument('--dendrogram', action='store_true', help='If set, perform hierarchical clustering of GMTK parameters table row-wise')
+    parser.add_argument('--dendrogram', action='store_true',
+                        help='If set, perform hierarchical clustering of GMTK parameters table row-wise')
+    parser.add_argument('--dendro-space', default=0, 
+                        help='Specify an integer to create space between dendrogram and GMTK parameters table. '
+                             'The greater the integer, the wider the space. Used when dendrogram labels are too long')
     parser.add_argument('--unlock', action='store_true', help='unlock directory (see snakemake doc)')
 
     parsed_args = parser.parse_args(args)
