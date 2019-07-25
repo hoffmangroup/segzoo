@@ -50,7 +50,7 @@ def main(args=sys.argv[1:]):
     parser.add_argument('--normalize-gmtk', action='store_true', help='If set, normalize gmtk parameters column wise')
     parser.add_argument('--dendrogram', action='store_true',
                         help='If set, perform hierarchical clustering of GMTK parameters table row-wise')
-    parser.add_argument('--dendro-space', default=0, 
+    parser.add_argument('--dendro-space', default=0,
                         help='Specify an integer to create space between dendrogram and GMTK parameters table. '
                              'The greater the integer, the wider the space. Used when dendrogram labels are too long')
     parser.add_argument('--unlock', action='store_true', help='unlock directory (see snakemake doc)')
