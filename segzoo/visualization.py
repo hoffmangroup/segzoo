@@ -320,7 +320,7 @@ if __name__ == '__main__':
 
     # Dimensioning variables
     DENDROGRAM_COL = 2
-    DENDROGRAM_LABELS_COL = args.dendro_space
+    DENDROGRAM_LABELS_COL = args.dendro_space - 1
     GMTK_COL = res_gmtk.shape[1] * GMTK_FACTOR + 1
     MIX_COL = res_mix_hm.shape[1] * MIX_FACTOR + 1
     OVERLAP_COL = OVERLAP_COLUMN_NUMBER * OVERLAP_FACTOR + 1
@@ -331,9 +331,10 @@ if __name__ == '__main__':
 
     # If the user does not choose to add space in between dendrogram and gmtk parameters, move the space ax to the left
     # to avoid adding extra space
-    RATIO_ORDER = [DENDROGRAM_LABELS_COL, DENDROGRAM_COL]
-    if DENDROGRAM_LABELS_COL:
-        RATIO_ORDER.reverse()
+    if DENDROGRAM_LABELS_COL < 0:
+        RATIO_ORDER = [DENDROGRAM_LABELS_COL + 1, DENDROGRAM_COL]
+    if DENDROGRAM_LABELS_COL >= 0:
+        RATIO_ORDER = [DENDROGRAM_COL, DENDROGRAM_LABELS_COL]
 
     # Create grid with axes following the ratios desired for the dimensions
     figure, axes = plt.subplots(1, 6, figsize=(n_columns, n_rows),
@@ -342,7 +343,7 @@ if __name__ == '__main__':
 
     # If the user does not choose to add space in between dendrogram and gmtk parameters, move the space ax to the left
     # to avoid adding extra space
-    if DENDROGRAM_LABELS_COL:
+    if DENDROGRAM_LABELS_COL >= 0:
         ax_dendrogram, ax_dendrogram_labels, ax_gmtk, ax_mix, ax_overlap, ax_agg = axes
     else:
         ax_dendrogram_labels, ax_dendrogram, ax_gmtk, ax_mix, ax_overlap, ax_agg = axes
@@ -383,7 +384,7 @@ if __name__ == '__main__':
             col_ordering = [res_gmtk.columns[leaf_index] for leaf_index in col_dendrogram['leaves']]
             res_gmtk = res_gmtk[col_ordering]
 
-            if DENDROGRAM_LABELS_COL:
+            if DENDROGRAM_LABELS_COL >= 0:
                 ax_dendrogram_labels.set_facecolor('None')
                 ax_dendrogram_labels.set_xticklabels('')
                 ax_dendrogram_labels.set_yticklabels('')
