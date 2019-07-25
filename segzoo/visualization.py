@@ -320,6 +320,12 @@ if __name__ == '__main__':
 
     # Dimensioning variables
     DENDROGRAM_COL = 2
+    # When there is an ax IN BETWEEN two axes, even if that ax is removed through figure.delaxes,
+    # it adds space in between the two axes. Hence, we swap the space-adding ax to the very left of the plot when user
+    # does not choose to add space in between dendrogram and gmtk parameters, and do not swap it when dendro-space > 0
+    # When dendro-space = 1, space is added simply by not swapping the space-adding ax
+    # DENDROGRAM_LABELS_COL specifies how many columns the space-adding ax should have
+    # When DENDROGRAM_LABELS_COL < 0, it signifies that the space-adding ax should be swapped to the very left
     DENDROGRAM_LABELS_COL = args.dendro_space - 1
     GMTK_COL = res_gmtk.shape[1] * GMTK_FACTOR + 1
     MIX_COL = res_mix_hm.shape[1] * MIX_FACTOR + 1
