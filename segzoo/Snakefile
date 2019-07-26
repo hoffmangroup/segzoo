@@ -12,7 +12,6 @@ GMTK_PARAMS = config["parameters"] if config["parameters"] else []
 MNE_FILENAME = config['mne'] if config['mne'] else []
 NORMALIZE_GMTK = config['normalize_gmtk']
 DENDROGRAM = config['dendrogram']
-DENDRO_SPACE = config['dendro_space']
 
 PREFIX = config["prefix"]  # "anaconda_path/envs/your_env/"
 SPECIES = config['species']  # "Homo_sapiens"
@@ -68,8 +67,7 @@ rule all:
 		outfile=join(OUTDIR, PLOTS, PLOTFILE)
 	params:
 		normalize_gmtk=NORMALIZE_GMTK,
-		dendrogram=DENDROGRAM,
-		dendro_space=DENDRO_SPACE
+		dendrogram=DENDROGRAM
 	script:
 		"visualization.py"
 
