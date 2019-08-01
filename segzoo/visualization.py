@@ -540,6 +540,4 @@ if __name__ == '__main__':
     else:
         figure.delaxes(ax_agg)
 
-    print(res_gmtk)
-    
     figure.savefig(args.outfile, bbox_inches='tight')
