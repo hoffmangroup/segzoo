@@ -3,7 +3,6 @@
 
 import sys
 from os import path
-import math
 import argparse
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -125,6 +124,7 @@ def gmtk_parameters(args):
     """
     Prepare the gmtk parameters in a DataFrame
     """
+
     def normalize_col(col):
         return (col - col.min()) / (col.max() - col.min())
 
@@ -277,6 +277,9 @@ def parse_args(args):
     parser.add_argument('--normalize-gmtk', action='store_true', help='If set, normalize gmtk parameters column wise')
     parser.add_argument('--dendrogram', action='store_true',
                         help='If set, perform hierarchical clustering of GMTK parameters table row-wise')
+    parser.add_argument('--dendro-space', default=0, type=int,
+                        help='Specify an integer to create space between dendrogram and GMTK parameters table. '
+                             'The greater the integer, the wider the space. Used when dendrogram labels are too long')
     parser.add_argument('--nuc', help='Nucleotide results file')
     parser.add_argument('--len_dist', help='Length distribution statistics')
     parser.add_argument('--overlap', help='The percentage of segments that overlap with a gene')
@@ -296,6 +299,7 @@ if __name__ == '__main__':
         if snakemake.params.dendrogram:
             arg_list.append('--dendrogram')
         arg_list += ['--gmtk', snakemake.input.gmtk,
+                     '--dendro-space', snakemake.params.dendro_space,
                      '--nuc', snakemake.input.nuc,
                      '--len_dist', snakemake.input.len_dist,
                      '--overlap', snakemake.input.olp,
@@ -316,6 +320,25 @@ if __name__ == '__main__':
     res_mix_hm, res_mix_ann = mix_data_matrix(args)
     res_agg_dict, agg_vmax = aggregation(args)
 
+    # Dimensioning variables
+    DENDROGRAM_COL = 2
+    DENDROGRAM_LABELS_COL = args.dendro_space
+    GMTK_COL = res_gmtk.shape[1] * GMTK_FACTOR + 1
+    MIX_COL = res_mix_hm.shape[1] * MIX_FACTOR + 1
+    OVERLAP_COL = OVERLAP_COLUMN_NUMBER * OVERLAP_FACTOR + 1
+    AGG_COL = len(BIOTYPES) * NUM_COMPONENTS * AGG_FACTOR + 1
+
+    n_rows = res_mix_hm.shape[0] * ROW_CORRECTOR
+    n_columns = DENDROGRAM_COL + DENDROGRAM_LABELS_COL + GMTK_COL + MIX_COL + OVERLAP_COL + AGG_COL
+
+    # Create grid with axes following the ratios desired for the dimensions
+    figure, axes = plt.subplots(1, 6, figsize=(n_columns, n_rows),
+                                gridspec_kw={"wspace": 8 / n_columns,
+                                             "width_ratios": [DENDROGRAM_COL, DENDROGRAM_LABELS_COL, GMTK_COL, MIX_COL,
+                                                              OVERLAP_COL, AGG_COL]})
+
+    ax_dendrogram, ax_dendrogram_labels, ax_gmtk, ax_mix, ax_overlap, ax_agg = axes
+
     # Read labels from mne file
     if args.mne and not res_gmtk.empty:
         new_tracks, new_labels = get_mne_ticklabels(args['mne'], res_gmtk.columns, res_mix_hm.index)
@@ -326,47 +349,6 @@ if __name__ == '__main__':
 
     row_ordering = new_labels
 
-    # Dimensioning variables
-    DENDROGRAM_COL = 2
-    GMTK_COL = res_gmtk.shape[1] * GMTK_FACTOR + 1
-    MIX_COL = res_mix_hm.shape[1] * MIX_FACTOR + 1
-    OVERLAP_COL = OVERLAP_COLUMN_NUMBER * OVERLAP_FACTOR + 1
-    AGG_COL = len(BIOTYPES) * NUM_COMPONENTS * AGG_FACTOR + 1
-
-    # Decide how many columns the invisible ax between dendrogram and gmtk parameters occupies based on the length of
-    # the longest label in new_labels
-    longest_label_len = len(max([str(item) for item in new_labels], key=len))
-    if longest_label_len <= 4:
-        DENDROGRAM_LABELS_COL = 0
-    elif longest_label_len <= 10:
-        DENDROGRAM_LABELS_COL = 1
-    elif longest_label_len <= 14:
-        DENDROGRAM_LABELS_COL = 2
-    else:
-        DENDROGRAM_LABELS_COL = 2 + math.ceil((longest_label_len-13)/4)
-
-    n_rows = res_mix_hm.shape[0] * ROW_CORRECTOR
-    n_columns = DENDROGRAM_COL + DENDROGRAM_LABELS_COL + GMTK_COL + MIX_COL + OVERLAP_COL + AGG_COL
-
-    # If do not add space in between dendrogram and gmtk parameters, move the space ax to the left
-    # to avoid adding extra space
-    if DENDROGRAM_LABELS_COL:
-        RATIO_ORDER = [DENDROGRAM_COL, DENDROGRAM_LABELS_COL - 1]
-    else:
-        RATIO_ORDER = [DENDROGRAM_LABELS_COL, DENDROGRAM_COL]
-
-    # Create grid with axes following the ratios desired for the dimensions
-    figure, axes = plt.subplots(1, 6, figsize=(n_columns, n_rows),
-                                gridspec_kw={"wspace": 9 / n_columns,
-                                             "width_ratios": [RATIO_ORDER[0], RATIO_ORDER[1], GMTK_COL, MIX_COL, OVERLAP_COL, AGG_COL]})   # 8 / n_columns
-
-    # If the user does not choose to add space in between dendrogram and gmtk parameters, move the space ax to the left
-    # to avoid adding extra space
-    if DENDROGRAM_LABELS_COL:
-        ax_dendrogram, ax_dendrogram_labels, ax_gmtk, ax_mix, ax_overlap, ax_agg = axes
-    else:
-        ax_dendrogram_labels, ax_dendrogram, ax_gmtk, ax_mix, ax_overlap, ax_agg = axes
-
     # GMTK parameters
     if args.gmtk:
         if args.dendrogram:
@@ -375,15 +357,13 @@ if __name__ == '__main__':
             row_linkage_matrix = sch.linkage(res_gmtk, method='weighted')
             row_dendrogram = sch.dendrogram(row_linkage_matrix, ax=ax_dendrogram, orientation='left',
                                             color_threshold=0, above_threshold_color='k',
-                                            leaf_font_size=LABEL_FONTSIZE,
-                                            labels=new_labels)
+                                            leaf_font_size=LABEL_FONTSIZE, labels=new_labels)
             ax_dendrogram.spines['right'].set_visible(False)
             ax_dendrogram.spines['left'].set_visible(False)
             ax_dendrogram.spines['top'].set_visible(False)
             ax_dendrogram.spines['bottom'].set_visible(False)
             ax_dendrogram.set_facecolor((1, 1, 1))  # Set dendrogram background to white
             ax_dendrogram.set_xticklabels('')
-            ax_dendrogram.set_ylabel('Label')
             row_ordering = row_dendrogram['leaves']
             row_ordering.reverse()
             res_gmtk = res_gmtk.loc[row_ordering]
@@ -397,12 +377,9 @@ if __name__ == '__main__':
             res_gmtk = res_gmtk[col_ordering]
             new_tracks = col_ordering
 
-            if DENDROGRAM_LABELS_COL:
-                ax_dendrogram_labels.set_facecolor('None')
-                ax_dendrogram_labels.set_xticklabels('')
-                ax_dendrogram_labels.set_yticklabels('')
-            else:
-                figure.delaxes(ax_dendrogram_labels)
+            ax_dendrogram_labels.set_facecolor('None')
+            ax_dendrogram_labels.set_xticklabels('')
+            ax_dendrogram_labels.set_yticklabels('')
         else:
             figure.delaxes(ax_dendrogram)
             figure.delaxes(ax_dendrogram_labels)
@@ -425,7 +402,7 @@ if __name__ == '__main__':
             ax_gmtk.set_yticklabels('')
             ax_gmtk.set_ylabel('')
         ax_gmtk.set_xticklabels(new_tracks, rotation=90, fontsize=LABEL_FONTSIZE)
-        ax_gmtk.set_title('GMTK Parameters',
+        ax_gmtk.set_title('GMTK parameters',
                           fontsize=TITLE_FONTSIZE,
                           position=(0, 1 + 0.6 / res_gmtk.shape[0] * FONT_SCALE / 1.5),
                           ha='left', va='bottom')
