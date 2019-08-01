@@ -124,6 +124,7 @@ def gmtk_parameters(args):
     """
     Prepare the gmtk parameters in a DataFrame
     """
+
     def normalize_col(col):
         return (col - col.min()) / (col.max() - col.min())
 
@@ -333,7 +334,8 @@ if __name__ == '__main__':
     # Create grid with axes following the ratios desired for the dimensions
     figure, axes = plt.subplots(1, 6, figsize=(n_columns, n_rows),
                                 gridspec_kw={"wspace": 8 / n_columns,
-                                             "width_ratios": [DENDROGRAM_COL, DENDROGRAM_LABELS_COL, GMTK_COL, MIX_COL, OVERLAP_COL, AGG_COL]})
+                                             "width_ratios": [DENDROGRAM_COL, DENDROGRAM_LABELS_COL, GMTK_COL, MIX_COL,
+                                                              OVERLAP_COL, AGG_COL]})
 
     ax_dendrogram, ax_dendrogram_labels, ax_gmtk, ax_mix, ax_overlap, ax_agg = axes
 
@@ -346,16 +348,16 @@ if __name__ == '__main__':
         new_tracks, new_labels = (res_gmtk.columns, res_mix_hm.index)
 
     row_ordering = new_labels
-    
-    
+
     # GMTK parameters
     if args.gmtk:
         if args.dendrogram:
             # Row-wise hierarchical clustering with dendrogram
+            res_gmtk.index = new_labels
             row_linkage_matrix = sch.linkage(res_gmtk, method='weighted')
             row_dendrogram = sch.dendrogram(row_linkage_matrix, ax=ax_dendrogram, orientation='left',
                                             color_threshold=0, above_threshold_color='k',
-                                            leaf_font_size=LABEL_FONTSIZE)
+                                            leaf_font_size=LABEL_FONTSIZE, labels=new_labels)
             ax_dendrogram.spines['right'].set_visible(False)
             ax_dendrogram.spines['left'].set_visible(False)
             ax_dendrogram.spines['top'].set_visible(False)
@@ -367,12 +369,14 @@ if __name__ == '__main__':
             res_gmtk = res_gmtk.loc[row_ordering]
 
             # Column-wise hierarchical clustering without dendrogram
+            res_gmtk.columns = new_tracks
             res_gmtk_transposed = res_gmtk.transpose()
             col_linkage_matrix = sch.linkage(res_gmtk_transposed, method='weighted')
             col_dendrogram = sch.dendrogram(col_linkage_matrix, no_plot=True)
             col_ordering = [res_gmtk.columns[leaf_index] for leaf_index in col_dendrogram['leaves']]
             res_gmtk = res_gmtk[col_ordering]
-            
+            new_tracks = col_ordering
+
             ax_dendrogram_labels.set_facecolor('None')
             ax_dendrogram_labels.set_xticklabels('')
             ax_dendrogram_labels.set_yticklabels('')
