@@ -1,5 +1,7 @@
 1.0.6:
 * added option, --dendrogram, to perform hierarchical clustering on gmtk parameters, the dendrogram for row-wise clustering is shown
+* fixed the inconsistency in column labels of gmtk parameters when hierarchical clustering is performed
+* automated the adjustment of spacing between dendrogram and gmtk parameters, allowing dendrogram labels to display properly
 
 1.0.5:
 * fixed the inconsistency in row ordering of dataframes
