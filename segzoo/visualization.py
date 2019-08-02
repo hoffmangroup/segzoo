@@ -371,6 +371,7 @@ if __name__ == '__main__':
     if args.gmtk:
         if args.dendrogram:
             # Row-wise hierarchical clustering with dendrogram
+            res_gmtk.index = new_labels
             row_linkage_matrix = sch.linkage(res_gmtk, method='weighted')
             row_dendrogram = sch.dendrogram(row_linkage_matrix, ax=ax_dendrogram, orientation='left',
                                             color_threshold=0, above_threshold_color='k',
@@ -388,11 +389,13 @@ if __name__ == '__main__':
             res_gmtk = res_gmtk.loc[row_ordering]
 
             # Column-wise hierarchical clustering without dendrogram
+            res_gmtk.columns = new_tracks
             res_gmtk_transposed = res_gmtk.transpose()
             col_linkage_matrix = sch.linkage(res_gmtk_transposed, method='weighted')
             col_dendrogram = sch.dendrogram(col_linkage_matrix, no_plot=True)
             col_ordering = [res_gmtk.columns[leaf_index] for leaf_index in col_dendrogram['leaves']]
             res_gmtk = res_gmtk[col_ordering]
+            new_tracks = col_ordering
 
             if DENDROGRAM_LABELS_COL:
                 ax_dendrogram_labels.set_facecolor('None')
