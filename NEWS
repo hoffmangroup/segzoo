@@ -1,5 +1,6 @@
 1.0.6:
 * added option to perform hierarchical clustering on gmtk parameters row-wise
+* fixed the inconsistency in column labels and heatmap of gmtk parameters when hierarchical clustering is performed
 
 1.0.5:
 * fixed the inconsistency in row ordering of dataframes
