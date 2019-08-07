@@ -252,6 +252,23 @@ def get_mne_ticklabels(filename, track_labels=[], label_labels=[]):
     return new_tracks, new_labels
 
 
+def calc_dendrogram_label_col(labels, zero_threshold=4, one_threshold=10, two_threshold=14, increment=4):
+    """
+    Return how many columns the invisible ax between dendrogram and gmtk parameters
+    should have based on the length of the longest label in `labels`
+    The defaults are set based on LABEL_FONTSIZE
+    """
+    longest_label_len = len(max([str(item) for item in labels], key=len))
+    if longest_label_len <= zero_threshold:
+        return 0
+    if longest_label_len <= one_threshold:
+        return 1
+    if longest_label_len <= two_threshold:
+        return 2
+    else:
+        return 2 + math.ceil((longest_label_len-two_threshold+1)/increment)
+
+
 def parse_args(args):
     """
     Parse command line arguments and return them as a Namespace object
@@ -328,22 +345,11 @@ if __name__ == '__main__':
 
     # Dimensioning variables
     DENDROGRAM_COL = 2
+    DENDROGRAM_LABELS_COL = calc_dendrogram_label_col(new_labels) if args.dendrogram else 0
     GMTK_COL = res_gmtk.shape[1] * GMTK_FACTOR + 1
     MIX_COL = res_mix_hm.shape[1] * MIX_FACTOR + 1
     OVERLAP_COL = OVERLAP_COLUMN_NUMBER * OVERLAP_FACTOR + 1
     AGG_COL = len(BIOTYPES) * NUM_COMPONENTS * AGG_FACTOR + 1
-
-    # Decide how many columns the invisible ax between dendrogram and gmtk parameters occupies based on the length of
-    # the longest label in new_labels
-    longest_label_len = len(max([str(item) for item in new_labels], key=len))
-    if longest_label_len <= 4:
-        DENDROGRAM_LABELS_COL = 0
-    elif longest_label_len <= 10:
-        DENDROGRAM_LABELS_COL = 1
-    elif longest_label_len <= 14:
-        DENDROGRAM_LABELS_COL = 2
-    else:
-        DENDROGRAM_LABELS_COL = 2 + math.ceil((longest_label_len-13)/4)
 
     n_rows = res_mix_hm.shape[0] * ROW_CORRECTOR
     n_columns = DENDROGRAM_COL + DENDROGRAM_LABELS_COL + GMTK_COL + MIX_COL + OVERLAP_COL + AGG_COL
@@ -351,21 +357,21 @@ if __name__ == '__main__':
     # If do not add space in between dendrogram and gmtk parameters, move the space ax to the left
     # to avoid adding extra space
     if DENDROGRAM_LABELS_COL:
-        RATIO_ORDER = [DENDROGRAM_COL, DENDROGRAM_LABELS_COL - 1]
+        WIDTH_RATIOS = [DENDROGRAM_COL, DENDROGRAM_LABELS_COL - 1, GMTK_COL, MIX_COL, OVERLAP_COL, AGG_COL]
     else:
-        RATIO_ORDER = [DENDROGRAM_LABELS_COL, DENDROGRAM_COL]
+        WIDTH_RATIOS = [DENDROGRAM_COL, GMTK_COL, MIX_COL, OVERLAP_COL, AGG_COL]
 
     # Create grid with axes following the ratios desired for the dimensions
-    figure, axes = plt.subplots(1, 6, figsize=(n_columns, n_rows),
+    figure, axes = plt.subplots(1, len(WIDTH_RATIOS), figsize=(n_columns, n_rows),
                                 gridspec_kw={"wspace": 9 / n_columns,
-                                             "width_ratios": [RATIO_ORDER[0], RATIO_ORDER[1], GMTK_COL, MIX_COL, OVERLAP_COL, AGG_COL]})   # 8 / n_columns
+                                             "width_ratios": WIDTH_RATIOS})
 
     # If the user does not choose to add space in between dendrogram and gmtk parameters, move the space ax to the left
     # to avoid adding extra space
     if DENDROGRAM_LABELS_COL:
         ax_dendrogram, ax_dendrogram_labels, ax_gmtk, ax_mix, ax_overlap, ax_agg = axes
     else:
-        ax_dendrogram_labels, ax_dendrogram, ax_gmtk, ax_mix, ax_overlap, ax_agg = axes
+        ax_dendrogram, ax_gmtk, ax_mix, ax_overlap, ax_agg = axes
 
     # GMTK parameters
     if args.gmtk:
@@ -401,11 +407,8 @@ if __name__ == '__main__':
                 ax_dendrogram_labels.set_facecolor('None')
                 ax_dendrogram_labels.set_xticklabels('')
                 ax_dendrogram_labels.set_yticklabels('')
-            else:
-                figure.delaxes(ax_dendrogram_labels)
         else:
             figure.delaxes(ax_dendrogram)
-            figure.delaxes(ax_dendrogram_labels)
 
         divider_gmtk = make_axes_locatable(ax_gmtk)
         ax_gmtk_cbar = divider_gmtk.append_axes("right", size=0.35, pad=0.3)
