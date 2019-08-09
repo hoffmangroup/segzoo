@@ -258,15 +258,12 @@ def calc_dendrogram_label_col(labels, zero_threshold=4, one_threshold=10, two_th
     should have based on the length of the longest label in `labels`
     The defaults are set based on LABEL_FONTSIZE
     """
-    longest_label_len = len(max([str(item) for item in labels], key=len))
-    if longest_label_len <= zero_threshold:
-        return 0
-    if longest_label_len <= one_threshold:
-        return 1
-    if longest_label_len <= two_threshold:
-        return 2
-    else:
-        return 2 + math.ceil((longest_label_len-two_threshold+1)/increment)
+    longest_label_len = max(len(str(item)) for item in labels)
+    helpful_tuples = ((zero_threshold, 0), (one_threshold, 1), (two_threshold, 2))
+    for tuple in helpful_tuples:
+        if longest_label_len <= tuple[0]:
+            return tuple[1]
+    return 2 + math.ceil((longest_label_len-two_threshold+1)/increment)
 
 
 def parse_args(args):

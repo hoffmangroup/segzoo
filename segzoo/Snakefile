@@ -269,4 +269,3 @@ rule create_diagram:
 		"dag.png"
 	shell:
 		"snakemake --rulegraph all | dot -Tsvg > {PLOTS}/dag.svg"
-
