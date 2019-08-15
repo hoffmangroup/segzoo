@@ -257,12 +257,14 @@ def calc_dendrogram_label_col(labels, zero_threshold=4, one_threshold=10, two_th
     Return how many columns the invisible ax between dendrogram and gmtk parameters
     should have based on the length of the longest label in `labels`
     The defaults are set based on LABEL_FONTSIZE
+
+    `increment` is the number of characters occupying one ax column
     """
     longest_label_len = max(len(str(item)) for item in labels)
-    helpful_tuples = ((zero_threshold, 0), (one_threshold, 1), (two_threshold, 2))
-    for tuple in helpful_tuples:
-        if longest_label_len <= tuple[0]:
-            return tuple[1]
+    threshold_to_ncol = ((zero_threshold, 0), (one_threshold, 1), (two_threshold, 2))
+    for threshold, ncol in threshold_to_ncol:
+        if longest_label_len <= threshold:
+            return ncol
     return 2 + math.ceil((longest_label_len-two_threshold+1)/increment)
 
 
