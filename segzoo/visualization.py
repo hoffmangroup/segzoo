@@ -273,7 +273,6 @@ def calc_dendrogram_label_col(labels, zero_threshold=4, one_threshold=7, increme
         if longest_label_len <= threshold:
             return ncol
     # Add one column for every increment increase in label length, rounding up
-    # Add one to the numerator to make the visual look nicer
     return 1 + math.ceil((longest_label_len-one_threshold)/increment)
 
 
