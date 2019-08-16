@@ -252,7 +252,7 @@ def get_mne_ticklabels(filename, track_labels=[], label_labels=[]):
     return new_tracks, new_labels
 
 
-def calc_dendrogram_label_col(labels, zero_threshold=4, one_threshold=10, two_threshold=14, increment=4):
+def calc_dendrogram_label_col(labels, zero_threshold=4, one_threshold=7, increment=3):
     """
     Return how many columns the invisible ax between dendrogram and gmtk parameters
     should have based on the length of the longest label in `labels`
@@ -260,19 +260,21 @@ def calc_dendrogram_label_col(labels, zero_threshold=4, one_threshold=10, two_th
 
     `increment` is the number of characters occupying one ax column
 
-    >>> calc_dendrogram_label_col([12345])
+    >>> calc_dendrogram_label_col([123])
+    0
+    >>> calc_dendrogram_label_col([1234567])   # label has length 7
     1
-    >>> calc_dendrogram_label_col([1234567890123456])
-    3
+    >>> calc_dendrogram_label_col([12345678])   # label has length 8
+    2
     """
     longest_label_len = max(len(str(item)) for item in labels)
-    threshold_to_ncol = ((zero_threshold, 0), (one_threshold, 1), (two_threshold, 2))
+    threshold_to_ncol = ((zero_threshold, 0), (one_threshold, 1))
     for threshold, ncol in threshold_to_ncol:
         if longest_label_len <= threshold:
             return ncol
     # Add one column for every increment increase in label length, rounding up
     # Add one to the numerator to make the visual look nicer
-    return 2 + math.ceil((longest_label_len-two_threshold+1)/increment)
+    return 1 + math.ceil((longest_label_len-one_threshold)/increment)
 
 
 def parse_args(args):
@@ -357,15 +359,15 @@ if __name__ == '__main__':
     OVERLAP_COL = OVERLAP_COLUMN_NUMBER * OVERLAP_FACTOR + 1
     AGG_COL = len(BIOTYPES) * NUM_COMPONENTS * AGG_FACTOR + 1
 
-    n_rows = res_mix_hm.shape[0] * ROW_CORRECTOR
-    n_columns = DENDROGRAM_COL + DENDROGRAM_LABELS_COL + GMTK_COL + MIX_COL + OVERLAP_COL + AGG_COL
-
     # If do not add space in between dendrogram and gmtk parameters, move the space ax to the left
     # to avoid adding extra space
     if DENDROGRAM_LABELS_COL:
         WIDTH_RATIOS = [DENDROGRAM_COL, DENDROGRAM_LABELS_COL - 1, GMTK_COL, MIX_COL, OVERLAP_COL, AGG_COL]
     else:
         WIDTH_RATIOS = [DENDROGRAM_COL, GMTK_COL, MIX_COL, OVERLAP_COL, AGG_COL]
+
+    n_rows = res_mix_hm.shape[0] * ROW_CORRECTOR
+    n_columns = sum(WIDTH_RATIOS)
 
     # Create grid with axes following the ratios desired for the dimensions
     figure, axes = plt.subplots(1, len(WIDTH_RATIOS), figsize=(n_columns, n_rows),
