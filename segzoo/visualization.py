@@ -259,12 +259,19 @@ def calc_dendrogram_label_col(labels, zero_threshold=4, one_threshold=10, two_th
     The defaults are set based on LABEL_FONTSIZE
 
     `increment` is the number of characters occupying one ax column
+
+    >>> calc_dendrogram_label_col([12345])
+    1
+    >>> calc_dendrogram_label_col([1234567890123456])
+    3
     """
     longest_label_len = max(len(str(item)) for item in labels)
     threshold_to_ncol = ((zero_threshold, 0), (one_threshold, 1), (two_threshold, 2))
     for threshold, ncol in threshold_to_ncol:
         if longest_label_len <= threshold:
             return ncol
+    # Add one column for every increment increase in label length, rounding up
+    # Add one to the numerator to make the visual look nicer
     return 2 + math.ceil((longest_label_len-two_threshold+1)/increment)
 
 
