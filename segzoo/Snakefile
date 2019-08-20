@@ -1,3 +1,4 @@
+from os import path
 from os.path import join, splitext
 from segzoo.gene_biotypes import BIOTYPES
 
@@ -10,7 +11,6 @@ SEGMENTATION = config["segmentation"]
 # TODO: try to set default values in argparse instead of using inline if/else
 GMTK_PARAMS = config["parameters"] if config["parameters"] else []
 MNE_FILENAME = config['mne'] if config['mne'] else []
-NORMALIZE_GMTK = config['normalize_gmtk']
 DENDROGRAM = config['dendrogram']
 
 PREFIX = config["prefix"]  # "anaconda_path/envs/your_env/"
@@ -24,6 +24,7 @@ fileGTF = BUILD + ".gtf.gz"
 fileSEQ = BUILD + ".fa"
 
 BUILDPATH = join(PREFIX, "share", "ggd", SPECIES, BUILD)
+HERE = path.abspath(path.dirname(__file__))
 
 RESULTS = "results"
 RESULTFILE = "results.tsv"
@@ -31,6 +32,8 @@ DATA = "data"
 # LOGS = "logs"
 PLOTS = "plots"
 PLOTFILE = "plot.png"
+UNNORM_PLOT = "unnormalized_plot.png"
+NORM_PLOT = "normalized_plot.png"
 
 # Temporary solution for setting predictable recipe names and file paths
 BUILD_RECIPE_MAPPING = {
@@ -64,12 +67,20 @@ rule all:
 		mne=MNE_FILENAME,
 		gmtk=join(OUTDIR, RESULTS, "gmtk_parameters", RESULTFILE) if config['parameters'] else []
 	output:
-		outfile=join(OUTDIR, PLOTS, PLOTFILE)
+		unnorm_plot=join(OUTDIR, PLOTS, UNNORM_PLOT) if config["parameters"] else join(OUTDIR, PLOTS, PLOTFILE),
+		norm_plot=join(OUTDIR, PLOTS, NORM_PLOT) if config["parameters"] else []
 	params:
-		normalize_gmtk=NORMALIZE_GMTK,
-		dendrogram=DENDROGRAM
-	script:
-		"visualization.py"
+		dendrogram=DENDROGRAM,
+		script='/scratch/segzoo/segzoo/visualization.py',
+		two_plot_flag=config["parameters"]
+	shell:
+		"""if [ -z '{params.two_plot_flag}']
+		 then
+		 	python '{params.script}'
+		 else
+		 	python '{params.script}'
+		 	python '{params.script}' --normalize-gmtk
+		 fi"""
 
 
 # DOWNLOADING RULES
