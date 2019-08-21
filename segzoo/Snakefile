@@ -1,4 +1,6 @@
+from os import path
 from os.path import join, splitext
+import ntpath
 from segzoo.gene_biotypes import BIOTYPES
 
 #OPTIONS
@@ -10,7 +12,6 @@ SEGMENTATION = config["segmentation"]
 # TODO: try to set default values in argparse instead of using inline if/else
 GMTK_PARAMS = config["parameters"] if config["parameters"] else []
 MNE_FILENAME = config['mne'] if config['mne'] else []
-NORMALIZE_GMTK = config['normalize_gmtk']
 DENDROGRAM = config['dendrogram']
 
 PREFIX = config["prefix"]  # "anaconda_path/envs/your_env/"
@@ -24,13 +25,20 @@ fileGTF = BUILD + ".gtf.gz"
 fileSEQ = BUILD + ".fa"
 
 BUILDPATH = join(PREFIX, "share", "ggd", SPECIES, BUILD)
+HERE = path.abspath(path.dirname(__file__))
 
 RESULTS = "results"
 RESULTFILE = "results.tsv"
 DATA = "data"
 # LOGS = "logs"
 PLOTS = "plots"
-PLOTFILE = "plot.png"
+
+if config["parameters"]:
+	PLOTFILES = ["unnormalized_plot.png", "normalized_plot.png"]
+else:
+	PLOTFILES = ["plot.png"]
+
+FILENAME_TO_NORMALIZE = {"unnormalized_plot.png": False, "normalized_plot.png": True, "plot.png": False}
 
 # Temporary solution for setting predictable recipe names and file paths
 BUILD_RECIPE_MAPPING = {
@@ -55,6 +63,9 @@ preprocessed_segmentation = join(OUTDIR, DATA,"segmentation", "segmentation.pkl.
 
 # Main rule that sets the targets to obtain
 rule all:
+	input: expand(join(OUTDIR, PLOTS, '{file}'), file=PLOTFILES)
+
+rule job:
 	input:
 		len_dist=join(OUTDIR, RESULTS, "length_distribution", RESULTFILE),
 		nuc=join(OUTDIR, RESULTS, "nucleotide", RESULTFILE),
@@ -64,10 +75,10 @@ rule all:
 		mne=MNE_FILENAME,
 		gmtk=join(OUTDIR, RESULTS, "gmtk_parameters", RESULTFILE) if config['parameters'] else []
 	output:
-		outfile=join(OUTDIR, PLOTS, PLOTFILE)
+		outfile=join(OUTDIR, PLOTS, '{file}')
 	params:
-		normalize_gmtk=NORMALIZE_GMTK,
-		dendrogram=DENDROGRAM
+		dendrogram=DENDROGRAM,
+		normalize_gmtk=lambda wildcards: FILENAME_TO_NORMALIZE[wildcards.file]
 	script:
 		"visualization.py"
 
