@@ -1,5 +1,6 @@
 from os import path
 from os.path import join, splitext
+import ntpath
 from segzoo.gene_biotypes import BIOTYPES
 
 #OPTIONS
@@ -31,9 +32,13 @@ RESULTFILE = "results.tsv"
 DATA = "data"
 # LOGS = "logs"
 PLOTS = "plots"
-PLOTFILE = "plot.png"
-UNNORM_PLOT = "unnormalized_plot.png"
-NORM_PLOT = "normalized_plot.png"
+
+if config["parameters"]:
+	PLOTFILES = ["unnormalized_plot.png", "normalized_plot.png"]
+else:
+	PLOTFILES = ["plot.png"]
+
+FILENAME_TO_NORMALIZE = {"unnormalized_plot.png": False, "normalized_plot.png": True, "plot.png": False}
 
 # Temporary solution for setting predictable recipe names and file paths
 BUILD_RECIPE_MAPPING = {
@@ -58,6 +63,9 @@ preprocessed_segmentation = join(OUTDIR, DATA,"segmentation", "segmentation.pkl.
 
 # Main rule that sets the targets to obtain
 rule all:
+	input: expand(join(OUTDIR, PLOTS, '{file}'), file=PLOTFILES)
+
+rule job:
 	input:
 		len_dist=join(OUTDIR, RESULTS, "length_distribution", RESULTFILE),
 		nuc=join(OUTDIR, RESULTS, "nucleotide", RESULTFILE),
@@ -67,20 +75,12 @@ rule all:
 		mne=MNE_FILENAME,
 		gmtk=join(OUTDIR, RESULTS, "gmtk_parameters", RESULTFILE) if config['parameters'] else []
 	output:
-		unnorm_plot=join(OUTDIR, PLOTS, UNNORM_PLOT) if config["parameters"] else join(OUTDIR, PLOTS, PLOTFILE),
-		norm_plot=join(OUTDIR, PLOTS, NORM_PLOT) if config["parameters"] else []
+		outfile=join(OUTDIR, PLOTS, '{file}')
 	params:
 		dendrogram=DENDROGRAM,
-		script='/scratch/segzoo/segzoo/visualization.py',
-		two_plot_flag=config["parameters"]
-	shell:
-		"""if [ -z '{params.two_plot_flag}']
-		 then
-		 	python '{params.script}'
-		 else
-		 	python '{params.script}'
-		 	python '{params.script}' --normalize-gmtk
-		 fi"""
+		normalize_gmtk=lambda wildcards: FILENAME_TO_NORMALIZE[wildcards.file]
+	script:
+		"visualization.py"
 
 
 # DOWNLOADING RULES

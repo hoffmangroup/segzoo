@@ -312,10 +312,9 @@ def parse_args(args):
 
 
 if __name__ == '__main__':
-    args = parse_args(sys.argv[1:])
     if 'snakemake' in dir():
         arg_list = []
-        if args.normalize_gmtk:
+        if snakemake.params.normalize_gmtk:
             arg_list.append('--normalize-gmtk')
         if snakemake.params.dendrogram:
             arg_list.append('--dendrogram')
@@ -326,11 +325,11 @@ if __name__ == '__main__':
                      '--mne', snakemake.input.mne,
                      '--aggs', snakemake.input.aggs,
                      '--stats', snakemake.input.stats,
-                     '--outfile', snakemake.output
+                     '--outfile', snakemake.output.outfile
                      ]
         args = parse_args(arg_list)
-
-    # Figure out output file name
+    else:
+        args = parse_args(sys.argv[1:])
 
     # Call the functions that obtain the results in DataFrames
     if args.gmtk:
@@ -550,7 +549,4 @@ if __name__ == '__main__':
     else:
         figure.delaxes(ax_agg)
 
-    if args.normalize_gmtk:
-        figure.savefig(args.outfile[1], bbox_inches='tight')
-    else:
-        figure.savefig(args.outfile[0], bbox_inches='tight')
+    figure.savefig(args.outfile, bbox_inches='tight')
