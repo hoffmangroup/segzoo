@@ -434,7 +434,7 @@ if __name__ == '__main__':
             ax_gmtk.set_yticklabels('')
             ax_gmtk.set_ylabel('')
         ax_gmtk.set_xticklabels(new_tracks, rotation=90, fontsize=LABEL_FONTSIZE)
-        ax_gmtk.set_title('GMTK Parameters',
+        ax_gmtk.set_title('Parameters',
                           fontsize=TITLE_FONTSIZE,
                           position=(0, 1 + 0.6 / res_gmtk.shape[0] * FONT_SCALE / 1.5),
                           ha='left', va='bottom')
