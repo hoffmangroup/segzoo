@@ -322,7 +322,7 @@ def parse_args(args):
                                       'labels and track names on the shown on the figure')
     parser.add_argument('--aggs', help='Aggregation results file')
     parser.add_argument('--stats', help='Gene biotype stats')
-    parser.add_argument('--outfile', help='The path of the resulting visualization, excluding file extension')
+    parser.add_argument('--outfile', help='The path of the resulting visualization')
     return parser.parse_args(args)
 
 
@@ -340,7 +340,7 @@ if __name__ == '__main__':
                      '--mne', snakemake.input.mne,
                      '--aggs', snakemake.input.aggs,
                      '--stats', snakemake.input.stats,
-                     '--outfile', snakemake.params.outfile
+                     '--outfile', snakemake.output.outfile
                      ]
         args = parse_args(arg_list)
     else:
@@ -602,4 +602,4 @@ if __name__ == '__main__':
     else:
         figure.delaxes(ax_agg)
 
-    figure.savefig(args.outfile + '.png', bbox_inches='tight', dpi=350)
+    figure.savefig(args.outfile, bbox_inches='tight', dpi=350)
