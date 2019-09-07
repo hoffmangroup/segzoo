@@ -121,6 +121,15 @@ def prettify_number(n):
     return '{:,}'.format(int(n)).replace(',', ' ')
 
 
+def remove_zero(num):
+    """
+    Remove leading and trailing zero
+    """
+    if float(num) == 0:
+        return '0'
+    return str(num).lstrip('0').rstrip('.0')
+
+
 def gmtk_parameters(args):
     """
     Prepare the gmtk parameters in a DataFrame
@@ -130,9 +139,8 @@ def gmtk_parameters(args):
 
     df = pd.read_csv(args.gmtk, index_col=0, sep='\t')
     df.sort_index(inplace=True)
-    if args.normalize_gmtk:
-        df = df.apply(normalize_col, axis=0)
-    return df, [df.max().max(), df.min().min()]
+    normalized_df = df.apply(normalize_col, axis=0)
+    return df, normalized_df, [df.max().max(), df.min().min()]
 
 
 def nucleotide(args):
@@ -251,6 +259,13 @@ def get_mne_ticklabels(filename, track_labels=[], label_labels=[]):
 
     return new_tracks, new_labels
 
+def generate_cellText(df):
+    """
+    Generate the text in the table under Parameters
+    Returns [[COL_MAX, ... , COL_MAX],
+             [COL_MIN, ... , COL_MIN]]
+    """
+    return [df.max().apply(human_format).tolist(), df.min().apply(human_format).tolist()]
 
 def calc_dendrogram_label_col(labels, zero_threshold=4, one_threshold=10, two_threshold=14, increment=4):
     """
@@ -307,7 +322,7 @@ def parse_args(args):
                                       'labels and track names on the shown on the figure')
     parser.add_argument('--aggs', help='Aggregation results file')
     parser.add_argument('--stats', help='Gene biotype stats')
-    parser.add_argument('--outfile', help='The path of the resulting visualization')
+    parser.add_argument('--outfile', help='The path of the resulting visualization, excluding file extension')
     return parser.parse_args(args)
 
 
@@ -325,7 +340,7 @@ if __name__ == '__main__':
                      '--mne', snakemake.input.mne,
                      '--aggs', snakemake.input.aggs,
                      '--stats', snakemake.input.stats,
-                     '--outfile', snakemake.output.outfile
+                     '--outfile', snakemake.params.outfile
                      ]
         args = parse_args(arg_list)
     else:
@@ -333,7 +348,8 @@ if __name__ == '__main__':
 
     # Call the functions that obtain the results in DataFrames
     if args.gmtk:
-        res_gmtk, gmtk_max_min = gmtk_parameters(args)
+        unnorm_res_gmtk, norm_res_gmtk, gmtk_max_min = gmtk_parameters(args)
+        res_gmtk = norm_res_gmtk if args.normalize_gmtk else unnorm_res_gmtk
     else:
         res_gmtk = pd.DataFrame()
     res_mix_hm, res_mix_ann = mix_data_matrix(args)
@@ -399,6 +415,7 @@ if __name__ == '__main__':
             row_ordering = row_dendrogram['leaves']
             row_ordering.reverse()
             res_gmtk = res_gmtk.loc[row_ordering]
+            unnorm_res_gmtk = unnorm_res_gmtk.loc[row_ordering]
 
             # Column-wise hierarchical clustering without dendrogram
             res_gmtk.columns = new_tracks
@@ -407,6 +424,7 @@ if __name__ == '__main__':
             col_dendrogram = sch.dendrogram(col_linkage_matrix, no_plot=True)
             col_ordering = [res_gmtk.columns[leaf_index] for leaf_index in col_dendrogram['leaves']]
             res_gmtk = res_gmtk[col_ordering]
+            unnorm_res_gmtk = unnorm_res_gmtk[col_ordering]
             new_tracks = col_ordering
 
             if DENDROGRAM_LABELS_COL:
@@ -419,10 +437,12 @@ if __name__ == '__main__':
         divider_gmtk = make_axes_locatable(ax_gmtk)
         ax_gmtk_cbar = divider_gmtk.append_axes("right", size=0.35, pad=0.3)
         g_gmtk = sns.heatmap(res_gmtk, cmap=cmap_gmtk, ax=ax_gmtk, cbar_ax=ax_gmtk_cbar)
+
         cbar_gmtk = g_gmtk.collections[0].colorbar
 
         if args.normalize_gmtk:
             cbar_gmtk.set_ticks(gmtk_max_min)
+            cbar_gmtk.set_ticks([1, 0])
             cbar_gmtk.ax.set_yticklabels(['col\nmax', 'col\nmin'], fontsize=LABEL_FONTSIZE)
         else:
             cbar_gmtk.ax.set_yticklabels(cbar_gmtk.ax.get_yticklabels(), fontsize=LABEL_FONTSIZE)
@@ -438,6 +458,39 @@ if __name__ == '__main__':
                           fontsize=TITLE_FONTSIZE,
                           position=(0, 1 + 0.6 / res_gmtk.shape[0] * FONT_SCALE / 1.5),
                           ha='left', va='bottom')
+
+        # Add min-max table
+        if args.normalize_gmtk:
+            mix_columns = res_gmtk.shape[1]
+
+            if TABLE_POS == "bottom":
+                high_low_table = ax_gmtk.table(
+                    cellText=generate_cellText(unnorm_res_gmtk),
+                    cellColours=[[cbar_gmtk.cmap(0.99)] * mix_columns, [cbar_gmtk.cmap(0.01)] * mix_columns],
+                    bbox=[0, - (TABLE_HEIGHT + .25) / n_rows, 1, TABLE_HEIGHT / n_rows],  # [left,bottom,width,height]
+                    fontsize=LABEL_FONTSIZE,
+                    cellLoc='center')
+                for j in range(mix_columns):
+                    high_low_table._cells[(0, j)]._text.set_color('white')  # TODO: do not access protected variables
+
+                # Offset labels down to leave space for the table
+                dx = 0
+                dy = -(TABLE_HEIGHT + 0.25) * 55 / 72
+                offset = ScaledTranslation(dx, dy, figure.dpi_scale_trans)
+
+                for label in ax_gmtk.xaxis.get_majorticklabels():
+                    label.set_transform(label.get_transform() + offset)
+
+            elif TABLE_POS == "top":
+                high_low_table = ax_mix.table(
+                    cellText=generate_cellText(unnorm_res_gmtk),
+                    cellColours=[[cbar_gmtk.cmap(0.99)] * mix_columns, [cbar_gmtk.cmap(0.01)] * mix_columns],
+                    bbox=[0, 1.02, 1, TABLE_HEIGHT / n_rows],  # [left,bottom,width,height]
+                    fontsize=LABEL_FONTSIZE,
+                    cellLoc='center')
+                # TODO: try to not iterate through every text. change colour by row
+                for j in range(mix_columns):
+                    high_low_table._cells[(0, j)]._text.set_color('white')  # TODO: do not access protected variables
     else:
         figure.delaxes(ax_gmtk)
         figure.delaxes(ax_dendrogram)
@@ -549,4 +602,4 @@ if __name__ == '__main__':
     else:
         figure.delaxes(ax_agg)
 
-    figure.savefig(args.outfile, bbox_inches='tight')
+    figure.savefig(args.outfile + '.png', bbox_inches='tight', dpi=350)

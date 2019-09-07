@@ -3,9 +3,9 @@ from os.path import join, splitext
 from segzoo.gene_biotypes import BIOTYPES
 
 #OPTIONS
-QUIET = ''
-CLOBBER = '--clobber'
-NOPLOT = '--noplot'
+QUIET = ""
+CLOBBER = "--clobber"
+NOPLOT = "--noplot"
 OUTDIR = config['outdir']
 SEGMENTATION = config["segmentation"]
 # TODO: try to set default values in argparse instead of using inline if/else

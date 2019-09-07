@@ -3,6 +3,8 @@
 * fixed the inconsistency in column labels of gmtk parameters when hierarchical clustering is performed
 * automated the adjustment of spacing between dendrogram and gmtk parameters, allowing dendrogram labels to display properly
 * eliminated the --normalize-gmtk option by producing two figures (normalized & non-normalized) when --parameters is used, one figure otherwise
+* added max-min table under normalized Parameters
+* modified png dpi to be 350
 
 1.0.5:
 * fixed the inconsistency in row ordering of dataframes
