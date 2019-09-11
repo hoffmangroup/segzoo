@@ -24,14 +24,14 @@ mpl.use('Agg')
 
 # VARIABLES AND CONSTANTS
 
-# Table proportion modifiers
+# Heatmap proportion modifiers
 NUM_COMPONENTS = 8
 GMTK_FACTOR = 1
 MIX_FACTOR = 1.5
 AGG_FACTOR = 1
 OVERLAP_FACTOR = 1
 OVERLAP_COLUMN_NUMBER = 2
-ROW_CORRECTOR = 1
+ROW_FACTOR = 1
 
 # Font scaling variables
 FONT_SCALE = 1.5
@@ -274,14 +274,12 @@ def calc_dendrogram_label_col(labels, zero_threshold=4, one_threshold=10, two_th
     return 2 + math.ceil((longest_label_len-two_threshold+1)/increment)
 
 
-def generate_table(ax, heatmap_df, cbar, table_content, n_rows):
+def generate_table(ax, n_cols, cbar, table_content, table_height):
     """Generate table underneath a heatmap plot"""
-    n_cols = heatmap_df.shape[1]
-
     high_low_table = ax.table(
         cellText=table_content,
         cellColours=[[cbar.cmap(0.99)] * n_cols, [cbar.cmap(0.01)] * n_cols],
-        bbox=[0, - (TABLE_HEIGHT + .25) / n_rows, 1, TABLE_HEIGHT / n_rows],  # [left,bottom,width,height]
+        bbox=[0, - (TABLE_HEIGHT + .25) / table_height, 1, TABLE_HEIGHT / table_height],  # [left,bottom,width,height]
         fontsize=LABEL_FONTSIZE,
         cellLoc='center')
     for j in range(n_cols):
@@ -379,7 +377,7 @@ if __name__ == '__main__':
     OVERLAP_COL = OVERLAP_COLUMN_NUMBER * OVERLAP_FACTOR + 1
     AGG_COL = len(BIOTYPES) * NUM_COMPONENTS * AGG_FACTOR + 1
 
-    n_rows = res_mix_hm.shape[0] * ROW_CORRECTOR
+    table_height = res_mix_hm.shape[0] * ROW_FACTOR
     n_columns = DENDROGRAM_COL + DENDROGRAM_LABELS_COL + GMTK_COL + MIX_COL + OVERLAP_COL + AGG_COL
 
     # If do not add space in between dendrogram and gmtk parameters, move the space ax to the left
@@ -390,7 +388,7 @@ if __name__ == '__main__':
         WIDTH_RATIOS = [DENDROGRAM_COL, GMTK_COL, MIX_COL, OVERLAP_COL, AGG_COL]
 
     # Create grid with axes following the ratios desired for the dimensions
-    figure, axes = plt.subplots(1, len(WIDTH_RATIOS), figsize=(n_columns, n_rows),
+    figure, axes = plt.subplots(1, len(WIDTH_RATIOS), figsize=(n_columns, table_height),
                                 gridspec_kw={"wspace": 9 / n_columns,
                                              "width_ratios": WIDTH_RATIOS})
 
@@ -453,7 +451,7 @@ if __name__ == '__main__':
             # Add min-max table for parameters matrix
             gmtk_table_content = [unnorm_res_gmtk.max().apply(human_format).tolist(),
                                   unnorm_res_gmtk.min().apply(human_format).tolist()]
-            generate_table(ax_gmtk, res_gmtk, cbar_gmtk, gmtk_table_content, n_rows)
+            generate_table(ax_gmtk, res_gmtk.shape[1], cbar_gmtk, gmtk_table_content, table_height)
         else:
             cbar_gmtk.ax.set_yticklabels(cbar_gmtk.ax.get_yticklabels(), fontsize=LABEL_FONTSIZE)
 
@@ -494,7 +492,7 @@ if __name__ == '__main__':
         ax_mix.set_yticklabels(new_labels, rotation=0, fontsize=LABEL_FONTSIZE)
 
     # Add min-max table for mix matrix
-    generate_table(ax_mix, res_mix_hm, cbar_mix, MIX_TABLE_CONTENT, n_rows)
+    generate_table(ax_mix, res_mix_hm.shape[1], cbar_mix, MIX_TABLE_CONTENT, table_height)
 
     # Overlap
     divider_overlap = make_axes_locatable(ax_overlap)
