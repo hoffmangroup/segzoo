@@ -276,15 +276,15 @@ def calc_dendrogram_label_col(labels, zero_threshold=4, one_threshold=10, two_th
 
 def generate_table(ax, heatmap_df, cbar, table_content, n_rows):
     """Generate table underneath a heatmap plot"""
-    col = heatmap_df.shape[1]
+    n_cols = heatmap_df.shape[1]
 
     high_low_table = ax.table(
         cellText=table_content,
-        cellColours=[[cbar.cmap(0.99)] * col, [cbar.cmap(0.01)] * col],
+        cellColours=[[cbar.cmap(0.99)] * n_cols, [cbar.cmap(0.01)] * n_cols],
         bbox=[0, - (TABLE_HEIGHT + .25) / n_rows, 1, TABLE_HEIGHT / n_rows],  # [left,bottom,width,height]
         fontsize=LABEL_FONTSIZE,
         cellLoc='center')
-    for j in range(col):
+    for j in range(n_cols):
         high_low_table._cells[(0, j)]._text.set_color('white')  # TODO: do not access protected variables
 
     # Offset labels down to leave space for the table
