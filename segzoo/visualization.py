@@ -43,8 +43,8 @@ TITLE_FONTSIZE = 25 * FONT_SCALE / 1.5
 # Table options and properties
 TABLE_POS = "bottom"  # top / bottom / other to omit
 TABLE_HEIGHT = 1  # relative to the height of 2 rows from the mix matrix
-TABLE_CONTENT = [['max', 'max', 'max', 'max', 'max', 65],
-                 ['min', 'min', 'min', 'min', 'min', 35]]
+MIX_TABLE_CONTENT = [['max', 'max', 'max', 'max', 'max', 65],
+                     ['min', 'min', 'min', 'min', 'min', 35]]
 
 # Color maps for the visualization
 cmap_gmtk = sns.diverging_palette(220, 10, as_cmap=True)
@@ -119,15 +119,6 @@ def prettify_number(n):
     '100'
     """
     return '{:,}'.format(int(n)).replace(',', ' ')
-
-
-def remove_zero(num):
-    """
-    Remove leading and trailing zero
-    """
-    if float(num) == 0:
-        return '0'
-    return str(num).lstrip('0').rstrip('.0')
 
 
 def gmtk_parameters(args):
@@ -259,13 +250,6 @@ def get_mne_ticklabels(filename, track_labels=[], label_labels=[]):
 
     return new_tracks, new_labels
 
-def generate_cellText(df):
-    """
-    Generate the text in the table under Parameters
-    Returns [[COL_MAX, ... , COL_MAX],
-             [COL_MIN, ... , COL_MIN]]
-    """
-    return [df.max().apply(human_format).tolist(), df.min().apply(human_format).tolist()]
 
 def calc_dendrogram_label_col(labels, zero_threshold=4, one_threshold=10, two_threshold=14, increment=4):
     """
@@ -288,6 +272,28 @@ def calc_dendrogram_label_col(labels, zero_threshold=4, one_threshold=10, two_th
     # Add one column for every increment increase in label length, rounding up
     # Add one to the numerator to make the visual look nicer
     return 2 + math.ceil((longest_label_len-two_threshold+1)/increment)
+
+
+def generate_table(ax, heatmap_df, cbar, table_content, n_rows):
+    """Generate table underneath a heatmap plot"""
+    col = heatmap_df.shape[1]
+
+    high_low_table = ax.table(
+        cellText=table_content,
+        cellColours=[[cbar.cmap(0.99)] * col, [cbar.cmap(0.01)] * col],
+        bbox=[0, - (TABLE_HEIGHT + .25) / n_rows, 1, TABLE_HEIGHT / n_rows],  # [left,bottom,width,height]
+        fontsize=LABEL_FONTSIZE,
+        cellLoc='center')
+    for j in range(col):
+        high_low_table._cells[(0, j)]._text.set_color('white')  # TODO: do not access protected variables
+
+    # Offset labels down to leave space for the table
+    dx = 0
+    dy = -(TABLE_HEIGHT + 0.25) * 55 / 72
+    offset = ScaledTranslation(dx, dy, figure.dpi_scale_trans)
+
+    for label in ax.xaxis.get_majorticklabels():
+        label.set_transform(label.get_transform() + offset)
 
 
 def parse_args(args):
@@ -437,13 +443,17 @@ if __name__ == '__main__':
         divider_gmtk = make_axes_locatable(ax_gmtk)
         ax_gmtk_cbar = divider_gmtk.append_axes("right", size=0.35, pad=0.3)
         g_gmtk = sns.heatmap(res_gmtk, cmap=cmap_gmtk, ax=ax_gmtk, cbar_ax=ax_gmtk_cbar)
-
         cbar_gmtk = g_gmtk.collections[0].colorbar
 
         if args.normalize_gmtk:
             cbar_gmtk.set_ticks(gmtk_max_min)
             cbar_gmtk.set_ticks([1, 0])
             cbar_gmtk.ax.set_yticklabels(['col\nmax', 'col\nmin'], fontsize=LABEL_FONTSIZE)
+
+            # Add min-max table for parameters matrix
+            gmtk_table_content = [unnorm_res_gmtk.max().apply(human_format).tolist(),
+                                  unnorm_res_gmtk.min().apply(human_format).tolist()]
+            generate_table(ax_gmtk, res_gmtk, cbar_gmtk, gmtk_table_content, n_rows)
         else:
             cbar_gmtk.ax.set_yticklabels(cbar_gmtk.ax.get_yticklabels(), fontsize=LABEL_FONTSIZE)
 
@@ -458,42 +468,10 @@ if __name__ == '__main__':
                           fontsize=TITLE_FONTSIZE,
                           position=(0, 1 + 0.6 / res_gmtk.shape[0] * FONT_SCALE / 1.5),
                           ha='left', va='bottom')
-
-        # Add min-max table
-        if args.normalize_gmtk:
-            mix_columns = res_gmtk.shape[1]
-
-            if TABLE_POS == "bottom":
-                high_low_table = ax_gmtk.table(
-                    cellText=generate_cellText(unnorm_res_gmtk),
-                    cellColours=[[cbar_gmtk.cmap(0.99)] * mix_columns, [cbar_gmtk.cmap(0.01)] * mix_columns],
-                    bbox=[0, - (TABLE_HEIGHT + .25) / n_rows, 1, TABLE_HEIGHT / n_rows],  # [left,bottom,width,height]
-                    fontsize=LABEL_FONTSIZE,
-                    cellLoc='center')
-                for j in range(mix_columns):
-                    high_low_table._cells[(0, j)]._text.set_color('white')  # TODO: do not access protected variables
-
-                # Offset labels down to leave space for the table
-                dx = 0
-                dy = -(TABLE_HEIGHT + 0.25) * 55 / 72
-                offset = ScaledTranslation(dx, dy, figure.dpi_scale_trans)
-
-                for label in ax_gmtk.xaxis.get_majorticklabels():
-                    label.set_transform(label.get_transform() + offset)
-
-            elif TABLE_POS == "top":
-                high_low_table = ax_mix.table(
-                    cellText=generate_cellText(unnorm_res_gmtk),
-                    cellColours=[[cbar_gmtk.cmap(0.99)] * mix_columns, [cbar_gmtk.cmap(0.01)] * mix_columns],
-                    bbox=[0, 1.02, 1, TABLE_HEIGHT / n_rows],  # [left,bottom,width,height]
-                    fontsize=LABEL_FONTSIZE,
-                    cellLoc='center')
-                # TODO: try to not iterate through every text. change colour by row
-                for j in range(mix_columns):
-                    high_low_table._cells[(0, j)]._text.set_color('white')  # TODO: do not access protected variables
     else:
         figure.delaxes(ax_gmtk)
         figure.delaxes(ax_dendrogram)
+
 
     # Mix matrix
     divider_mix = make_axes_locatable(ax_mix)
@@ -515,37 +493,8 @@ if __name__ == '__main__':
     else:
         ax_mix.set_yticklabels(new_labels, rotation=0, fontsize=LABEL_FONTSIZE)
 
-    # Add min-max table
-    mix_columns = res_mix_hm.shape[1]
-
-    if TABLE_POS == "bottom":
-        high_low_table = ax_mix.table(
-            cellText=TABLE_CONTENT,
-            cellColours=[[cbar_mix.cmap(0.99)] * mix_columns, [cbar_mix.cmap(0.01)] * mix_columns],
-            bbox=[0, - (TABLE_HEIGHT + .25) / n_rows, 1, TABLE_HEIGHT / n_rows],  # [left,bottom,width,height]
-            fontsize=LABEL_FONTSIZE,
-            cellLoc='center')
-        for j in range(mix_columns):
-            high_low_table._cells[(0, j)]._text.set_color('white')  # TODO: do not access protected variables
-
-        # Offset labels down to leave space for the table
-        dx = 0
-        dy = -(TABLE_HEIGHT + 0.25) * 55 / 72
-        offset = ScaledTranslation(dx, dy, figure.dpi_scale_trans)
-
-        for label in ax_mix.xaxis.get_majorticklabels():
-            label.set_transform(label.get_transform() + offset)
-
-    elif TABLE_POS == "top":
-        high_low_table = ax_mix.table(
-            cellText=TABLE_CONTENT,
-            cellColours=[[cbar_mix.cmap(0.99)] * mix_columns, [cbar_mix.cmap(0.01)] * mix_columns],
-            bbox=[0, 1.02, 1, TABLE_HEIGHT / n_rows],  # [left,bottom,width,height]
-            fontsize=LABEL_FONTSIZE,
-            cellLoc='center')
-        # TODO: try to not iterate through every text. change colour by row
-        for j in range(mix_columns):
-            high_low_table._cells[(0, j)]._text.set_color('white')  # TODO: do not access protected variables
+    # Add min-max table for mix matrix
+    generate_table(ax_mix, res_mix_hm, cbar_mix, MIX_TABLE_CONTENT, n_rows)
 
     # Overlap
     divider_overlap = make_axes_locatable(ax_overlap)
