@@ -353,7 +353,10 @@ if __name__ == '__main__':
     # Call the functions that obtain the results in DataFrames
     if args.gmtk:
         unnorm_res_gmtk, norm_res_gmtk, gmtk_max_min = gmtk_parameters(args)
-        res_gmtk = norm_res_gmtk if args.normalize_gmtk else unnorm_res_gmtk
+        if args.normalize_gmtk:
+            res_gmtk = norm_res_gmtk
+        else:
+            res_gmtk = unnorm_res_gmtk
     else:
         res_gmtk = pd.DataFrame()
     res_mix_hm, res_mix_ann = mix_data_matrix(args)
