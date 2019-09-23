@@ -5,6 +5,7 @@
 * eliminated the --normalize-gmtk option by producing two figures (normalized & non-normalized) when --parameters is used, one figure otherwise
 * added max-min table under normalized Parameters
 * modified png dpi to be 350
+* added pdf output
 
 1.0.5:
 * fixed the inconsistency in row ordering of dataframes

@@ -121,6 +121,15 @@ def prettify_number(n):
     return '{:,}'.format(int(n)).replace(',', ' ')
 
 
+def remove_zero(num):
+    """
+    Remove leading and trailing zero
+    """
+    if float(num) == 0:
+        return '0'
+    return str(num).lstrip('0').rstrip('.0')
+
+
 def gmtk_parameters(args):
     """
     Prepare the gmtk parameters in a DataFrame
@@ -250,6 +259,13 @@ def get_mne_ticklabels(filename, track_labels=[], label_labels=[]):
 
     return new_tracks, new_labels
 
+def generate_cellText(df):
+    """
+    Generate the text in the table under Parameters
+    Returns [[COL_MAX, ... , COL_MAX],
+             [COL_MIN, ... , COL_MIN]]
+    """
+    return [df.max().apply(human_format).tolist(), df.min().apply(human_format).tolist()]
 
 def calc_dendrogram_label_col(labels, zero_threshold=4, one_threshold=10, two_threshold=14, increment=4):
     """
@@ -326,7 +342,7 @@ def parse_args(args):
                                       'labels and track names on the shown on the figure')
     parser.add_argument('--aggs', help='Aggregation results file')
     parser.add_argument('--stats', help='Gene biotype stats')
-    parser.add_argument('--outfile', help='The path of the resulting visualization')
+    parser.add_argument('--outfile', help='The path of the resulting visualization, excluding file extension')
     return parser.parse_args(args)
 
 
@@ -344,7 +360,7 @@ if __name__ == '__main__':
                      '--mne', snakemake.input.mne,
                      '--aggs', snakemake.input.aggs,
                      '--stats', snakemake.input.stats,
-                     '--outfile', snakemake.output.outfile
+                     '--outfile', snakemake.params.outfile
                      ]
         args = parse_args(arg_list)
     else:
@@ -444,6 +460,7 @@ if __name__ == '__main__':
         divider_gmtk = make_axes_locatable(ax_gmtk)
         ax_gmtk_cbar = divider_gmtk.append_axes("right", size=0.35, pad=0.3)
         g_gmtk = sns.heatmap(res_gmtk, cmap=cmap_gmtk, ax=ax_gmtk, cbar_ax=ax_gmtk_cbar)
+
         cbar_gmtk = g_gmtk.collections[0].colorbar
 
         if args.normalize_gmtk:
@@ -472,7 +489,6 @@ if __name__ == '__main__':
     else:
         figure.delaxes(ax_gmtk)
         figure.delaxes(ax_dendrogram)
-
 
     # Mix matrix
     divider_mix = make_axes_locatable(ax_mix)
@@ -552,4 +568,6 @@ if __name__ == '__main__':
     else:
         figure.delaxes(ax_agg)
 
-    figure.savefig(args.outfile, bbox_inches='tight', dpi=350)
+    figure.savefig(args.outfile + '.png', bbox_inches='tight', dpi=350)
+
+    figure.savefig(args.outfile + '.pdf', bbox_inches='tight')
