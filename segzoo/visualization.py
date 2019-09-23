@@ -121,15 +121,6 @@ def prettify_number(n):
     return '{:,}'.format(int(n)).replace(',', ' ')
 
 
-def remove_zero(num):
-    """
-    Remove leading and trailing zero
-    """
-    if float(num) == 0:
-        return '0'
-    return str(num).lstrip('0').rstrip('.0')
-
-
 def gmtk_parameters(args):
     """
     Prepare the gmtk parameters in a DataFrame
@@ -259,13 +250,6 @@ def get_mne_ticklabels(filename, track_labels=[], label_labels=[]):
 
     return new_tracks, new_labels
 
-def generate_cellText(df):
-    """
-    Generate the text in the table under Parameters
-    Returns [[COL_MAX, ... , COL_MAX],
-             [COL_MIN, ... , COL_MIN]]
-    """
-    return [df.max().apply(human_format).tolist(), df.min().apply(human_format).tolist()]
 
 def calc_dendrogram_label_col(labels, zero_threshold=4, one_threshold=10, two_threshold=14, increment=4):
     """
