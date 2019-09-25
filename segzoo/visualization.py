@@ -326,7 +326,7 @@ def parse_args(args):
                                       'labels and track names on the shown on the figure')
     parser.add_argument('--aggs', help='Aggregation results file')
     parser.add_argument('--stats', help='Gene biotype stats')
-    parser.add_argument('--outfile', help='The path of the resulting visualization')
+    parser.add_argument('--outfile', help='The path of the resulting visualization, excluding file extension')
     return parser.parse_args(args)
 
 
@@ -344,7 +344,7 @@ if __name__ == '__main__':
                      '--mne', snakemake.input.mne,
                      '--aggs', snakemake.input.aggs,
                      '--stats', snakemake.input.stats,
-                     '--outfile', snakemake.output.outfile
+                     '--outfile', snakemake.params.outfile
                      ]
         args = parse_args(arg_list)
     else:
@@ -444,6 +444,7 @@ if __name__ == '__main__':
         divider_gmtk = make_axes_locatable(ax_gmtk)
         ax_gmtk_cbar = divider_gmtk.append_axes("right", size=0.35, pad=0.3)
         g_gmtk = sns.heatmap(res_gmtk, cmap=cmap_gmtk, ax=ax_gmtk, cbar_ax=ax_gmtk_cbar)
+
         cbar_gmtk = g_gmtk.collections[0].colorbar
 
         if args.normalize_gmtk:
@@ -472,7 +473,6 @@ if __name__ == '__main__':
     else:
         figure.delaxes(ax_gmtk)
         figure.delaxes(ax_dendrogram)
-
 
     # Mix matrix
     divider_mix = make_axes_locatable(ax_mix)
@@ -552,4 +552,6 @@ if __name__ == '__main__':
     else:
         figure.delaxes(ax_agg)
 
-    figure.savefig(args.outfile, bbox_inches='tight', dpi=350)
+    figure.savefig(args.outfile + '.png', bbox_inches='tight', dpi=350)
+
+    figure.savefig(args.outfile + '.pdf', bbox_inches='tight')

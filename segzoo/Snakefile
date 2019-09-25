@@ -33,11 +33,11 @@ DATA = "data"
 PLOTS = "plots"
 
 if config["parameters"]:
-	PLOTFILES = ["unnormalized_plot.png", "normalized_plot.png"]
+	PLOTFILES = ["unnormalized_plot", "normalized_plot"]
 else:
-	PLOTFILES = ["plot.png"]
+	PLOTFILES = ["plot"]
 
-FILENAME_TO_NORMALIZE = {"unnormalized_plot.png": False, "normalized_plot.png": True, "plot.png": False}
+FILENAME_TO_NORMALIZE = {"unnormalized_plot": False, "normalized_plot": True, "plot": False}
 
 # Temporary solution for setting predictable recipe names and file paths
 BUILD_RECIPE_MAPPING = {
@@ -62,7 +62,9 @@ preprocessed_segmentation = join(OUTDIR, DATA,"segmentation", "segmentation.pkl.
 
 # Main rule that sets the targets to obtain
 rule all:
-	input: expand(join(OUTDIR, PLOTS, '{file}'), file=PLOTFILES)
+	input:
+		expand(join(OUTDIR, PLOTS, '{file}.png'), file=PLOTFILES),
+		expand(join(OUTDIR, PLOTS, '{file}.pdf'), file=PLOTFILES)
 
 rule job:
 	input:
@@ -73,11 +75,13 @@ rule job:
 		stats=join(BUILDPATH, recipeGTF, "gene_biotype", "gene_biotype_stats"),
 		mne=MNE_FILENAME,
 		gmtk=join(OUTDIR, RESULTS, "gmtk_parameters", RESULTFILE) if config['parameters'] else []
-	output:
-		outfile=join(OUTDIR, PLOTS, '{file}')
 	params:
+		outfile=join(OUTDIR, PLOTS, '{file}'),
 		dendrogram=DENDROGRAM,
 		normalize_gmtk=lambda wildcards: FILENAME_TO_NORMALIZE[wildcards.file]
+	output:
+		png=join(OUTDIR, PLOTS, '{file}.png'),
+		pdf=join(OUTDIR, PLOTS, '{file}.pdf')
 	script:
 		"visualization.py"
 
