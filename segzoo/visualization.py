@@ -364,9 +364,9 @@ if __name__ == '__main__':
 
     # Read labels from mne file
     if args.mne and not res_gmtk.empty:
-        new_tracks, new_labels = get_mne_ticklabels(args['mne'], res_gmtk.columns, res_mix_hm.index)
+        new_tracks, new_labels = get_mne_ticklabels(args.mne, res_gmtk.columns, res_mix_hm.index)
     elif args.mne:
-        new_tracks, new_labels = get_mne_ticklabels(args['mne'], [], res_mix_hm.index)
+        new_tracks, new_labels = get_mne_ticklabels(args.mne, [], res_mix_hm.index)
     else:
         new_tracks, new_labels = (res_gmtk.columns, res_mix_hm.index)
 
@@ -443,7 +443,8 @@ if __name__ == '__main__':
 
         divider_gmtk = make_axes_locatable(ax_gmtk)
         ax_gmtk_cbar = divider_gmtk.append_axes("right", size=0.35, pad=0.3)
-        g_gmtk = sns.heatmap(res_gmtk, cmap=cmap_gmtk, ax=ax_gmtk, cbar_ax=ax_gmtk_cbar)
+        g_gmtk = sns.heatmap(res_gmtk, cmap=cmap_gmtk, ax=ax_gmtk, cbar_ax=ax_gmtk_cbar, annot=True, fmt='.1f')
+
 
         cbar_gmtk = g_gmtk.collections[0].colorbar
 
@@ -461,7 +462,7 @@ if __name__ == '__main__':
 
         # Setting titles and axis labels
         if not args.dendrogram:
-            ax_gmtk.set_yticklabels(new_labels, rotation=0, fontsize=LABEL_FONTSIZE)  # put label names horizontally
+            ax_gmtk.set_yticklabels(['Quiescent', 'Consistent', 'Down', 'Up'], rotation=0, fontsize=LABEL_FONTSIZE)  # put label names horizontally
         else:
             ax_gmtk.set_yticklabels('')
             ax_gmtk.set_ylabel('')

@@ -1,7 +1,7 @@
 # All biotypes specified here will be processed and shown in the final visualization in the same specified order
 # Repetitions are accepted
 BIOTYPES = [
-    'protein_coding',
+    # 'protein_coding',
     'lincRNA',
     #         '3prime_overlapping_ncrna',
     #         'antisense',
