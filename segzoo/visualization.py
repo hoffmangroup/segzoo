@@ -443,7 +443,10 @@ if __name__ == '__main__':
 
         divider_gmtk = make_axes_locatable(ax_gmtk)
         ax_gmtk_cbar = divider_gmtk.append_axes("right", size=0.35, pad=0.3)
-        g_gmtk = sns.heatmap(res_gmtk, cmap=cmap_gmtk, ax=ax_gmtk, cbar_ax=ax_gmtk_cbar, annot=True, fmt='.1f')
+        g_gmtk = sns.heatmap(res_gmtk, cmap="BuGn", ax=ax_gmtk, cbar_ax=ax_gmtk_cbar, annot=True, fmt='.1f',
+                             cbar_kws=dict(ticks=[res_gmtk.min().min(), res_gmtk.max().max()]))
+        # ax_gmtk_cbar.set_yticklabels([f"{res_gmtk.min().min():.1f}", f"{res_gmtk.max().max():.1f}"])
+        ax_gmtk_cbar.set_yticklabels(["min", "max"])
 
 
         cbar_gmtk = g_gmtk.collections[0].colorbar
