@@ -16,15 +16,14 @@ setup(
     description='System for turnkey analysis of semi-automated genome annotations',
     long_description=long_description,  # Optional
     long_description_content_type='text/markdown',
-    url='https://bitbucket.org/hoffmanlab/segzoo',
-    author='Marc Asenjo',
-    author_email='asenjomarc@gmail.com',
+    url='https://github.com/hoffmangroup/segzoo',
+    author='Mickael Mendez',
+    author_email='mickael.mendez@mail.utoronto.ca',
     classifiers=[
         'Development Status :: 3 - Alpha',
         # 'Intended Audience :: Developers',
         "Topic :: Scientific/Engineering :: Bio-Informatics",
         "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
-        'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.8'
     ],
     packages=find_packages('.'),
