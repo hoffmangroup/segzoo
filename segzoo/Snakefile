@@ -1,5 +1,5 @@
 from os import path
-from os.path import join, splitext
+from os.path import join, splitext, dirname
 from segzoo.gene_biotypes import BIOTYPES
 
 #OPTIONS
@@ -49,7 +49,7 @@ BUILD_RECIPE_MAPPING = {
 			 'filepath': join(PREFIX, 'share/ggd/Homo_sapiens/hg38/hg38-gtf-ensembl-v1/1/hg38-gtf-ensembl-v1.gtf.gz')}},
 'danRer10': {'sequence':
 				 {'recipe': 'danrer10-reference-genome-ucsc-v1',
-				  'filepath': join(PREFIX, 'share/ggd/Danio_rerio/danRer10/danrer10-reference-genome-ucsc-v1/1/danrer10-reference-genome-ucsc-v1.fa')},
+				  'filepath': join(PREFIX, 'share/ggd/Danio_rerio/danRer10/danrer10-reference-genome-ucsc-v1/1/danrer10-reference-genome-ucsc-v1.fa.gz')},
 			 'gtf':
 				 {'recipe': 'danrer10-gtf-ensembl-v1',
 				  'filepath': join(PREFIX, 'share/ggd/Danio_rerio/danRer10/danrer10-gtf-ensembl-v1/1/danrer10-gtf-ensembl-v1.gtf.gz')}}
@@ -100,18 +100,27 @@ rule download_ggd_annotation:
 	output:
 		RECIPE_FILEPATH['gtf']['filepath']
 	params:
-		recipe=RECIPE_FILEPATH['gtf']['recipe']
+		recipe=RECIPE_FILEPATH['gtf']['recipe'],
+		outdir=dirname(RECIPE_FILEPATH['gtf']['filepath'])
 	shell:
-		"conda install -p {PREFIX} -y {QUIET} {CLOBBER} -c ggd-genomics {params.recipe}"
+		"""
+		rm -R {params.outdir}
+		ggd install --prefix {PREFIX} {params.recipe}
+		"""
 
 rule download_ggd_sequence:
 	input:
 	output:
 		RECIPE_FILEPATH['sequence']['filepath']
 	params:
-		recipe=RECIPE_FILEPATH['sequence']['recipe']
+		recipe=RECIPE_FILEPATH['sequence']['recipe'],
+		outdir=dirname(RECIPE_FILEPATH['sequence']['filepath'])
 	shell:
-		"conda install -p {PREFIX} -y {QUIET} {CLOBBER} -c ggd-genomics {params.recipe}"
+		"""
+		rm -R {params.outdir}
+		ggd install --prefix {PREFIX}  {params.recipe}
+		zcat {output}.gz > {output}
+		"""
 
 
 # PREPROCESSING RULES
@@ -127,7 +136,7 @@ rule run_segtools_preprocess:
 	shell:
 		"segtools-preprocess {QUIET} {CLOBBER} {SEGMENTATION} {params.outfile}"
 
-# Parse the main gtf file to create one file per each gene biotype (uses pybedtools)
+# Parse the main gtf file to create one file per gene biotype (uses pybedtools)
 rule create_gene_biotype_gtf:
 	input:
 		#gtf=join(BUILDPATH, recipeGTF, fileGTF)

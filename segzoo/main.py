@@ -1,25 +1,23 @@
 import argparse
 import sys
+import os
 import snakemake
 import subprocess
 
 from .version import __version__
-from os import path
 
 
 def get_current_conda_env():
     """
-    Call conda cli to retrieve current environment path.
+    Use os.environ to find path to current conda environment.
     :return: path to current conda environment
     """
-    cmd = "conda info --base"
-    output = subprocess.check_output(cmd.split())
-
-    return output.decode("utf-8").rstrip()
+    
+    return os.environ["CONDA_PREFIX"]
 
 
 def main(args=sys.argv[1:]):
-    here = path.abspath(path.dirname(__file__))
+    here = os.path.abspath(os.path.dirname(__file__))
 
     description = '''
     Segzoo is a tool that allows to run various genomic analysis on a segmentation obtained by segway.
@@ -54,9 +52,9 @@ def main(args=sys.argv[1:]):
     parsed_args = parser.parse_args(args)
 
     if parsed_args.download_only:
-        snakemake.snakemake(path.join(here, "Snakefile"), targets=["download_targets"], cores=parsed_args.j, config=vars(parsed_args))
+        snakemake.snakemake(os.path.join(here, "Snakefile"), targets=["download_targets"], cores=parsed_args.j, config=vars(parsed_args))
 
     else:
-        snakemake.snakemake(path.join(here, "Snakefile"), cores=parsed_args.j, config=vars(parsed_args), unlock=parsed_args.unlock)
+        snakemake.snakemake(os.path.join(here, "Snakefile"), cores=parsed_args.j, config=vars(parsed_args), unlock=parsed_args.unlock)
 
     # printreason=True, dryrun=True, printshellcmds=True)
