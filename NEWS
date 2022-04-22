@@ -1,3 +1,6 @@
+1.0.7:
+* added support for ggd-install
+
 1.0.6:
 * added option, --dendrogram, to perform hierarchical clustering on gmtk parameters, the dendrogram for row-wise clustering is shown
 * fixed the inconsistency in column labels of gmtk parameters when hierarchical clustering is performed
