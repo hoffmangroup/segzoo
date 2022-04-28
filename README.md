@@ -11,8 +11,8 @@ The requirements for this tool include segtools, bedtools and python packages, b
 This quick start needs you to have anaconda already installed in your local computer (either with python 2 or 3).
 
 1. Download the test [segmentation](https://segway.hoffmanlab.org/2018/protocol/trackhub/hg38/segway.bed.gz) and [GMTK parameters](https://segway.hoffmanlab.org/2018/protocol/params/params.params) and move them both in a directory called, for example, `segzoo`
-2. Open a terminal in the mentioned directory and run `conda create -c bioconda -n python3 python=3.6 r-base r-latticeextra r-reshape2 r-cairo r-cluster bedtools -y`
-3. After the last command has finished, run `source activate python3` followed by `pip install segzoo`
+2. Open a terminal in the mentioned directory and run `conda create -c bioconda -n segzooenv python=3.6 r-base r-latticeextra r-reshape2 r-cairo r-cluster bedtools -y`
+3. After the last command has finished, run `source activate segzooenv` followed by `pip install segzoo`
 4. When finished, run `segzoo segway.bed.gz --parameters params.params`
 5. After around 30 min, the resulting visualization will be stored in the current's directory `outdir/plots` folder
 
@@ -21,10 +21,10 @@ This quick start needs you to have anaconda already installed in your local comp
 
 Segzoo is a python 3 tool, so if you have python 2 installed it is highly recommended for you to install segzoo in a separate python 3 environment.
 Although it can, this tool is not designed to run on a cluster node without internet access, so all the following steps should be done in a local computer.
-To create such an environment run `conda create -n python3 python=3.6` where you can change the name of the environment, `python3`.
+To create such an environment run `conda create -n segzooenv python=3.6` where you can change the name of the environment, `segzooenv`.
 Accept all the installation steps.
 
-Next, you need to activate this environment. Run `source activate python3` specifying the name of the environment you chose before.
+Next, you need to activate this environment. Run `source activate segzooenv` specifying the name of the environment you chose before.
 Now that you already are in it, you can install segzoo. You can do that by running `pip install segzoo`,
 which will require you to have bedtools already installed, as it's only in anaconda.
 To install bedtools beforehand you can use `conda install -c bioconda bedtools`.
