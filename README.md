@@ -21,13 +21,11 @@ This quick start needs you to have anaconda already installed in your local comp
 
 Segzoo is a python 3 tool, so if you have python 2 installed it is highly recommended for you to install segzoo in a separate python 3 environment.
 Although it can, this tool is not designed to run on a cluster node without internet access, so all the following steps should be done in a local computer.
-To create such an environment run `conda create -n segzooenv python=3.6` where you can change the name of the environment, `segzooenv`.
-Accept all the installation steps.
+To create such an environment run `conda create -n segzooenv python=3.8.* seaborn segtools ggd snakemake pybedtools -y` where you can change the name of the environment, `segzooenv`.
 
-Next, you need to activate this environment. Run `source activate segzooenv` specifying the name of the environment you chose before.
+Next, you need to activate this environment. Run `conda activate segzooenv` specifying the name of the environment you chose before.
 Now that you already are in it, you can install segzoo. You can do that by running `pip install segzoo`,
-which will require you to have bedtools already installed, as it's only in anaconda.
-To install bedtools beforehand you can use `conda install -c bioconda bedtools`.
+
 
 *Note*: currently it's being worked on uploading Segzoo to bioconda.
 When this is finished it will be possible to install it just by using `conda install -c bioconda segzoo` which will take care of all the dependencies.

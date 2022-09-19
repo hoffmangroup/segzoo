@@ -1,3 +1,7 @@
+1.0.8:
+* update environment specs in README.md
+* remove unnecessary dependencies
+
 1.0.7:
 * added support for ggd-install
 
