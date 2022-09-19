@@ -1,6 +1,9 @@
-1.0.8:
+1.0.9:
 * update environment specs in README.md
 * remove unnecessary dependencies
+
+1.0.8:
+* skip version
 
 1.0.7:
 * added support for ggd-install
