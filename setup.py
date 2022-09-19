@@ -27,9 +27,8 @@ setup(
         'Programming Language :: Python :: 3.8'
     ],
     packages=find_packages('.'),
-    install_requires=['matplotlib==3.1.0', 'numpy', 'pandas', 'pysam',
-                      'seaborn', 'segtools', 'snakemake', 'pybedtools', 'scipy'],
-    python_requires='>=3.8',
+    install_requires=['seaborn', 'segtools', 'snakemake', 'pybedtools'],
+    python_requires='==3.8.*',
     package_data={  # Optional
         'segzoo': ['Snakefile'],
     },
