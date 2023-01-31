@@ -36,9 +36,13 @@ ROW_FACTOR = 1
 # Font scaling variables
 FONT_SCALE = 1.5
 sns.set(font_scale=FONT_SCALE)
-# sns.set_context("poster")
+
 LABEL_FONTSIZE = 20 * FONT_SCALE / 1.5
 TITLE_FONTSIZE = 25 * FONT_SCALE / 1.5
+
+INDEX_AXES_X_COORD = -0.1
+INDEX_AXES_Y_COORD = 1.12
+INDEX_AXES_X_DATACOORD = -0.3
 
 # Table options and properties
 TABLE_POS = "bottom"  # top / bottom / other to omit
@@ -423,6 +427,8 @@ if __name__ == '__main__':
             row_ordering.reverse()
             res_gmtk = res_gmtk.loc[row_ordering]
             unnorm_res_gmtk = unnorm_res_gmtk.loc[row_ordering]
+            ax_dendrogram.text(INDEX_AXES_X_COORD, INDEX_AXES_Y_COORD, "a", fontsize=LABEL_FONTSIZE + 2, ha='right',
+                               va='top', transform=ax_dendrogram.transAxes)
 
             # Column-wise hierarchical clustering without dendrogram
             res_gmtk.columns = new_tracks
@@ -448,7 +454,6 @@ if __name__ == '__main__':
         cbar_gmtk = g_gmtk.collections[0].colorbar
 
         if args.normalize_gmtk:
-            cbar_gmtk.set_ticks(gmtk_max_min)
             cbar_gmtk.set_ticks([1, 0])
             cbar_gmtk.ax.set_yticklabels(['col\nmax', 'col\nmin'], fontsize=LABEL_FONTSIZE)
 
@@ -457,11 +462,15 @@ if __name__ == '__main__':
                                   unnorm_res_gmtk.min().apply(human_format).tolist()]
             generate_table(ax_gmtk, res_gmtk.shape[1], cbar_gmtk, gmtk_table_content, table_height)
         else:
+            cbar_gmtk.set_ticks(gmtk_max_min)
             cbar_gmtk.ax.set_yticklabels(cbar_gmtk.ax.get_yticklabels(), fontsize=LABEL_FONTSIZE)
 
         # Setting titles and axis labels
         if not args.dendrogram:
             ax_gmtk.set_yticklabels(new_labels, rotation=0, fontsize=LABEL_FONTSIZE)  # put label names horizontally
+            ax_gmtk.text(INDEX_AXES_X_DATACOORD, INDEX_AXES_Y_COORD, "a", fontsize=LABEL_FONTSIZE + 2, ha='right',
+                         va='top', transform=ax_gmtk.get_xaxis_transform())
+
         else:
             ax_gmtk.set_yticklabels('')
             ax_gmtk.set_ylabel('')
@@ -470,6 +479,7 @@ if __name__ == '__main__':
                           fontsize=TITLE_FONTSIZE,
                           position=(0, 1 + 0.6 / res_gmtk.shape[0] * FONT_SCALE / 1.5),
                           ha='left', va='bottom')
+
     else:
         figure.delaxes(ax_gmtk)
         figure.delaxes(ax_dendrogram)
@@ -481,6 +491,8 @@ if __name__ == '__main__':
     res_mix_hm = res_mix_hm.loc[row_ordering]
     g_mix = sns.heatmap(res_mix_hm, annot=res_mix_ann.applymap(human_format), cbar=True, cmap=cmap_mix, vmin=0, vmax=1,
                         ax=ax_mix, cbar_ax=ax_mix_cbar, fmt='')
+    g_mix.text(INDEX_AXES_X_DATACOORD, INDEX_AXES_Y_COORD, "b", fontsize=LABEL_FONTSIZE + 2, ha='left',
+               va='top', transform=g_mix.get_xaxis_transform())
     cbar_mix = g_mix.collections[0].colorbar
     cbar_mix.set_ticks([0, 1])
     cbar_mix.ax.set_yticklabels(['low', 'high'], fontsize=LABEL_FONTSIZE)
@@ -509,7 +521,9 @@ if __name__ == '__main__':
     cbar_overlap.ax.set_yticklabels(['0%', '100%'], fontsize=LABEL_FONTSIZE)
 
     ax_overlap.set_ylabel('')
-    ax_overlap.text(0, -0.6 * FONT_SCALE / 1.5, "Overlap", fontsize=TITLE_FONTSIZE, ha='left', va='bottom')
+
+    ax_overlap.text(INDEX_AXES_X_DATACOORD, INDEX_AXES_Y_COORD, "c", fontsize=LABEL_FONTSIZE + 2, ha='right',
+                     va='top', transform=ax_overlap.get_xaxis_transform())
     ax_overlap.set_xticklabels(ax_overlap.get_xticklabels(), rotation=90, fontsize=LABEL_FONTSIZE)
     ax_overlap.set_title('Bases',
                          fontsize=LABEL_FONTSIZE,
@@ -535,6 +549,8 @@ if __name__ == '__main__':
         ax_agg_cbar = divider_agg.append_axes("right", size=0.35, pad=0.3)
 
         ax_agg.text(0, -0.6 * FONT_SCALE / 1.5, "Aggregation", fontsize=TITLE_FONTSIZE, ha='left', va='bottom')
+        ax_agg.text(INDEX_AXES_X_DATACOORD, INDEX_AXES_Y_COORD, "d", fontsize=LABEL_FONTSIZE + 2, ha='right',
+                     va='top', transform=ax_agg.get_xaxis_transform())
         g_agg = sns.heatmap(res_agg_dict[BIOTYPES[0]].loc[row_ordering], annot=True, cbar=True, vmin=0, vmax=agg_vmax,
                             cbar_ax=ax_agg_cbar,
                             cmap=cmap_agg, ax=ax_agg, fmt='.5g')
