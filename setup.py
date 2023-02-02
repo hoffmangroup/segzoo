@@ -23,6 +23,7 @@ setup(
         'Development Status :: 3 - Alpha',
         "Topic :: Scientific/Engineering :: Bio-Informatics",
         "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
+        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8'
     ],
     packages=find_packages('.'),
