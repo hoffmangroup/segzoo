@@ -146,7 +146,7 @@ def nucleotide(args):
     res_nuc_ann.sort_index(inplace=True)
 
     # Rename columns
-    res_nuc_ann = res_nuc_ann.rename('GC content (%)')
+    res_nuc_ann = res_nuc_ann.rename('G+C content (%)')
 
     # Interpolation of the parameters to rescale them between vmin and vmax for the heatmap
     vmax = 65
