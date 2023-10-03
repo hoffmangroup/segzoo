@@ -1,79 +1,74 @@
 # Segzoo
 
-## What is segzoo?
+## Introduction
 
-Segzoo is a tool that allows to automatically run various genomic analysis on a segmentation obtained with Segway.
-The results of each analysis are made available as well as a summarizing visualization of the results.
-The requirements for this tool include segtools, bedtools and python packages, but all of them are dependencies that will be taken care of during installation.
+Segzoo is a tool designed to automate various genomic analyses on segmentations obtained using Segway. It provides detailed results for each analysis and a comprehensive visualization summarizing the outcomes.
 
-## Segzoo install and quickstart
+The tool has specific dependencies, including segtools, bedtools, and various Python packages. However, these dependencies will be automatically handled during the installation process.
 
-We recommend to install Segzoo via the [`mamba`](https://mamba.readthedocs.io/en/latest/mamba-installation.html#mamba-install) package manager.
+## Installation and Quick Start
 
-1. To install segzoo in a separate environment , open a terminal and run `mamba create -c bioconda -n segzooenv segzoo -y`.
-2. After the last command has finished, run `mamba activate segzooenv` to activate the environment where segzoo is installed.
-3. To test Segzoo, download the [segmentation](https://segway.hoffmanlab.org/2018/protocol/trackhub/hg38/segway.bed.gz), the [GMTK parameters](https://segway.hoffmanlab.org/2018/protocol/params/params.params), and move them both in a directory called, for example, `segzoo`.
-4. When finished, run `segzoo segway.bed.gz --parameters params.params`.
-5. After around 30 min, the resulting visualization will be stored in the current's directory `outdir/plots` folder.
+We recommend installing Segzoo using the [mamba](https://mamba.readthedocs.io/en/latest/mamba-installation.html#mamba-install) package manager.
 
+1. To install Segzoo in a separate environment, open a terminal and execute `mamba create -c bioconda -n segzooenv segzoo -y`.
+2. Once the installation is complete, activate the Segzoo environment by running `mamba activate segzooenv`.
+3. To test Segzoo, download the [segmentation file](https://segway.hoffmanlab.org/2018/protocol/trackhub/hg38/segway.bed.gz) and the [GMTK parameters](https://segway.hoffmanlab.org/2018/protocol/params/params.params), and place them in a directory named, for example, `segzoo`.
+4. After the files are in place, execute `segzoo segway.bed.gz --parameters params.params`.
+5. After approximately 30 minutes, the resulting visualization will be stored in the `outdir/plots` folder within the current directory.
 
-## How to use
+## Usage
 
-To access the help to know how to run segzoo you can run `segzoo -h` or `segzoo --help`. Here's a look at all possible arguments:
+To access the help and learn how to run Segzoo, execute `segzoo -h` or `segzoo --help`. Here are the available command-line arguments:
 
-- `--version` to check the current version of segzoo installed
-- `--parameters` to specify a params.params file resulting from segway's training to obtain GMTK parameters in the final visualization. If not specified, GMTK parameters won't show in the final visualization
-- `--prefix` to specify where you want all needed data (like the genome assembly) to be downloaded (default: the installation environment's directory)
-- `-o` or `--outdir` to specify the folder where all the results and the final visualization will be created (default: outdir)
-- `-j` to specify the number of cores to use (default: 1)
-- `--species` and `--build` specify the species and the build for which the segmentation was created (default: Homo_sapiens and hg38)
-- `--download-only` is an option to support cluster use. Running Segzoo using this argument will only run the downloading rules of the pipeline, and store the data in using the specified prefix. After that, runs on nodes without internet access can be done by specifying that same prefix
-- `--mne` allows specify an `mne` file to translate segment labels and track names on the shown
- on the figure. see `Using mne files` section for details.
-- `--normalize-gmtk` allows normalization of gmtk parameters table row-wise (i.e. across a segmentation label)
-- `--dendrogram` is an option to perform hierarchical clustering of gmtk parameters row-wise
+- `--version`: Check the currently installed version of Segzoo.
+- `--parameters`: Specify a `params.params` file generated from Segway's training to obtain GMTK parameters in the final visualization. If not specified, GMTK parameters will not be displayed.
+- `--prefix`: Specify the location where all necessary data, such as genome assembly, should be downloaded (default: the installation environment's directory).
+- `-o` or `--outdir`: Specify the folder where all the results and the final visualization will be created (default: `outdir`).
+- `-j`: Specify the number of cores to utilize (default: 1).
+- `--species` and `--build`: Specify the species and build for which the segmentation was created (default: Homo_sapiens and hg38).
+- `--download-only`: This option is designed to support cluster use. Running Segzoo with this argument will only execute the downloading rules of the pipeline and store the data using the specified prefix. Subsequently, runs on nodes without internet access can be performed by specifying the same prefix.
+- `--mne`: Specify an `mne` file to translate segment labels and track names shown on the figure. Refer to the 'Using mne files' section for details.
+- `--normalize-gmtk`: Allow row-wise normalization of GMTK parameters table.
+- `--dendrogram`: Perform hierarchical clustering of GMTK parameters row-wise.
 
-If you are interested in obtaining information on different gene biotypes than *protein coding and lincRNA*, which are the default,
-you can get to the installation folder of segzoo and modify the file `gene_biotypes.py` as you wish.
-The same can be said for the final visualization, which can be altered by modifying some variables on top of `visualization.py`
+If you are interested in obtaining information on gene biotypes other than *protein coding and lincRNA*, which are the default, modify the `gene_biotypes.py` file in the installation folder of Segzoo accordingly. Similarly, the final visualization can be customized by modifying specific variables in `visualization.py`.
 
-After running the command `segzoo` by specifying the segmentation file and all the optional arguments that you want, the execution of the pipeline will begin.
-All necessary data will be downloaded, tools will run the different analysis and the final visualization will be created. This execution may take some time.
+Once the `segzoo` command is executed, specifying the segmentation file and any desired optional arguments, the pipeline will commence. It will download all necessary data, run various analyses, and generate the final visualization. Please note that this execution may take some time.
 
 ## Results
 
-After the execution has finished, the new directory will be created (**outdir** is the default name).
-In the **data** folder you will be able to find the results for all the tools' analysis.
-In **results** you will find the tables of processed results used in the visualization.
-Finally, the visualization will be in the **plots** directory. It will look something like this:
+Upon completion of the execution, a new directory will be created (default name: `outdir`). The following folders will be available:
+
+- **data**: Contains the results for all the tools' analyses.
+- **results**: Contains the processed result tables used in the visualization.
+- **plots**: Contains the final visualization, which will resemble the example below:
 
 ![Plot](https://bitbucket.org/hoffmanlab/segzoo/raw/default/plots/plot.png)
 
-The y-axis are the labels of the segmentation for all the heatmaps, while the x-axis are the different results obtained for each of them.
+In the visualization:
+- The y-axis represents the labels of the segmentation for all the heatmaps.
+- The x-axis displays the different results obtained for each of them.
+- The left section showcases the learned parameters during the Segway training.
+- Subsequently, a heatmap is displayed, with each column normalized to the color map's limits.
+- The aggregation tables are presented in the specified order from `gene_biotypes.py`, potentially containing duplicates.
+- The aggregation results for each label represent the percentage of counts in one component compared to all the idealized genes. Each row's values sum up to 100.
+- The number of genes found for each biotype is provided after the biotype's name.
 
-- In the left there are the learned parameters during the training of Segway.
-- Next, a heatmap that has each different column normalized so that the maximum and minimum values are the limits of the color map used.
-This applies to all but the GC content, which is normalized between 35% and 65% always. All this information is displayed in the table below
-- The aggregation tables are shown in the same order as specified in `gene_biotypes.py`, and can contain duplicates
-- The aggregation results displayed for each label are the percentage of counts in one component in comparison to all the idealized gene, so notice that each row adds up to 100
-- The number of genes found for each biotype shown is specified after the biotype's name
+## Using MNE Files
 
-## Using mne files
+The `mne` file can be utilized to translate segment labels and track names in the final figure. The file is tab-delimited and should contain three columns in any order:
 
-The `mne` file can be used to translate segment labels and track names in the final figure.
-The file is tab delimited and should contain three columns in any order. Each row represent a translation rules. The columns are defined as follow:
-- `old`: the orginal label or track name that you can see from running `segzoo` with default parameters. The values in this column will be the keys in a python dict or look up table. 
-- `new`: replace the `old` value by the `new` value from this column. 
-- `type`: indicates whether the row should be used to translate a track or a label. It is specifically useful when tracks and labels have the same `old` name.
+- `old`: The original label or track name displayed when running `segzoo` with default parameters. Values in this column serve as keys in a Python dictionary or lookup table.
+- `new`: Replace the `old` value with the corresponding `new` value from this column.
+- `type`: Indicate whether the row should be used to translate a track or a label. This is especially useful when tracks and labels have the same `old` name.
 
-The file header is mandatory and should contain the three fields listed above: old, new and type.
-Note that only the tracks and labels defined in the `mne` file will be updated. Specifically, it is possible to define more rows than needed in order to reuse the same files for different projects. The tracks and labels that are not defined in the `mne` files will remain unchanged.
+The file header is mandatory and should include the three fields: old, new, and type.
 
-Example of `mne` file:
+Please note that only the tracks and labels defined in the `mne` file will be updated. Unused tracks and labels will remain unchanged. Here is an example of an `mne` file:
 
-```csv
-old	new	type
-0	Quiescent	label
-1	TSS	label
-H3K4me3_robust_peaks	H3K4me3	track
+```plaintext
+old    new    type
+0      Quiescent    label
+1      TSS    label
+H3K4me3_robust_peaks    H3K4me3    track
 ```
