@@ -6,31 +6,16 @@ Segzoo is a tool that allows to automatically run various genomic analysis on a 
 The results of each analysis are made available as well as a summarizing visualization of the results.
 The requirements for this tool include segtools, bedtools and python packages, but all of them are dependencies that will be taken care of during installation.
 
-## Quick start
+## Segzoo install and quickstart
 
-This quick start needs you to have anaconda already installed in your local computer (either with python 2 or 3).
+We recommend to install Segzoo via the [`mamba`](https://mamba.readthedocs.io/en/latest/mamba-installation.html#mamba-install) package manager.
 
-1. Download the test [segmentation](https://segway.hoffmanlab.org/2018/protocol/trackhub/hg38/segway.bed.gz) and [GMTK parameters](https://segway.hoffmanlab.org/2018/protocol/params/params.params) and move them both in a directory called, for example, `segzoo`
-2. Open a terminal in the mentioned directory and run `conda create -c bioconda -n segzooenv python=3.6 r-base r-latticeextra r-reshape2 r-cairo r-cluster bedtools -y`
-3. After the last command has finished, run `source activate segzooenv` followed by `pip install segzoo`
-4. When finished, run `segzoo segway.bed.gz --parameters params.params`
-5. After around 30 min, the resulting visualization will be stored in the current's directory `outdir/plots` folder
+1. To install segzoo in a separate environment , open a terminal and run `mamba create -c bioconda -n segzooenv segzoo -y`.
+2. After the last command has finished, run `mamba activate segzooenv` to activate the environment where segzoo is installed.
+3. To test Segzoo, download the [segmentation](https://segway.hoffmanlab.org/2018/protocol/trackhub/hg38/segway.bed.gz), the [GMTK parameters](https://segway.hoffmanlab.org/2018/protocol/params/params.params), and move them both in a directory called, for example, `segzoo`.
+4. When finished, run `segzoo segway.bed.gz --parameters params.params`.
+5. After around 30 min, the resulting visualization will be stored in the current's directory `outdir/plots` folder.
 
-
-## How to install
-
-Segzoo is a python 3 tool, so if you have python 2 installed it is highly recommended for you to install segzoo in a separate python 3 environment.
-Although it can, this tool is not designed to run on a cluster node without internet access, so all the following steps should be done in a local computer.
-To create such an environment run `conda create -n segzooenv python=3.8.* seaborn segtools ggd snakemake pybedtools -y` where you can change the name of the environment, `segzooenv`.
-
-Next, you need to activate this environment. Run `conda activate segzooenv` specifying the name of the environment you chose before.
-Now that you already are in it, you can install segzoo. You can do that by running `pip install segzoo`,
-
-
-*Note*: currently it's being worked on uploading Segzoo to bioconda.
-When this is finished it will be possible to install it just by using `conda install -c bioconda segzoo` which will take care of all the dependencies.
-
-After accepting all installations, segzoo will be good to go!
 
 ## How to use
 
