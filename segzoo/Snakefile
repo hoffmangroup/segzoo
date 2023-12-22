@@ -42,6 +42,10 @@ FILENAME_TO_NORMALIZE = {"unnormalized_plot": False, "normalized_plot": True, "p
 # Temporary solution for setting predictable recipe names and file paths
 BUILD_RECIPE_MAPPING = {
 	'hg38': {
+		'repeatmasker':
+			{
+				'recipe': 'hg38-repeatmasker-ucsc-v1',
+				'filepath': join(PREFIX,'share/ggd/Homo_sapiens/hg38/hg38-repeatmasker-ucsc-v1/1/hg38-repeatmasker-ucsc-v1.bed.gz')},
 		'chromsizes':
 			{
 				'recipe': 'hg38-chromsizes-ggd-v1',
@@ -110,7 +114,21 @@ rule download_targets:
 		RECIPE_FILEPATH['gtf']['filepath'],
 		RECIPE_FILEPATH['chromsizes']['filepath'] if BUILD == 'hg38' else [],
 		RECIPE_FILEPATH['phastcons']['filepath'] if BUILD == 'hg38' else [],
+		RECIPE_FILEPATH['repeatmasker']['filepath'] if BUILD == 'hg38' else [],
 		join(BUILDPATH, recipeGTF, "gene_biotype", "gene_biotype_stats")  # gene biotype separation output
+
+rule download_ggd_repeatmasker:
+	input: []
+	output:
+		RECIPE_FILEPATH['repeatmasker']['filepath']
+	params:
+		recipe=RECIPE_FILEPATH['repeatmasker']['recipe'],
+		outdir=dirname(RECIPE_FILEPATH['repeatmasker']['filepath'])
+	shell:
+		"""
+		rm -R {params.outdir}
+		ggd install --prefix {PREFIX} {params.recipe}
+		"""
 
 
 rule download_ggd_chromsizes:
