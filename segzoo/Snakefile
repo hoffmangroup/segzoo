@@ -41,23 +41,37 @@ FILENAME_TO_NORMALIZE = {"unnormalized_plot": False, "normalized_plot": True, "p
 
 # Temporary solution for setting predictable recipe names and file paths
 BUILD_RECIPE_MAPPING = {
-'hg38': {'sequence':
-			 {'recipe': 'hg38-reference-genome-ucsc-v1',
-			  'filepath': join(PREFIX, 'share/ggd/Homo_sapiens/hg38/hg38-reference-genome-ucsc-v1/1/hg38-reference-genome-ucsc-v1.fa')},
+	'hg38': {
+		'chromsizes':
+			{
+				'recipe': 'hg38-chromsizes-ggd-v1',
+				'filepath': join(PREFIX,'share/ggd/Homo_sapiens/hg38/hg38-chromsizes-ggd-v1/1/hg38-chromsizes-ggd-v1.txt')},
+		'phastcons':
+			{
+				'recipe': 'hg38-phastcons-ucsc-v1',
+				'filepath': join(PREFIX,'share/ggd/Homo_sapiens/hg38/hg38-phastcons-ucsc-v1/1/hg38-phastcons-ucsc-v1.bedGraph.gz')},
+		'sequence':
+			{
+				'recipe': 'hg38-reference-genome-ucsc-v1',
+				'filepath': join(PREFIX,'share/ggd/Homo_sapiens/hg38/hg38-reference-genome-ucsc-v1/1/hg38-reference-genome-ucsc-v1.fa')},
 		'gtf':
-			{'recipe': 'hg38-gtf-ensembl-v1',
-			 'filepath': join(PREFIX, 'share/ggd/Homo_sapiens/hg38/hg38-gtf-ensembl-v1/1/hg38-gtf-ensembl-v1.gtf.gz')}},
-'danRer10': {'sequence':
-				 {'recipe': 'danrer10-reference-genome-ucsc-v1',
-				  'filepath': join(PREFIX, 'share/ggd/Danio_rerio/danRer10/danrer10-reference-genome-ucsc-v1/1/danrer10-reference-genome-ucsc-v1.fa.gz')},
-			 'gtf':
-				 {'recipe': 'danrer10-gtf-ensembl-v1',
-				  'filepath': join(PREFIX, 'share/ggd/Danio_rerio/danRer10/danrer10-gtf-ensembl-v1/1/danrer10-gtf-ensembl-v1.gtf.gz')}}
+			{
+				'recipe': 'hg38-gtf-ensembl-v1',
+				'filepath': join(PREFIX,'share/ggd/Homo_sapiens/hg38/hg38-gtf-ensembl-v1/1/hg38-gtf-ensembl-v1.gtf.gz')}},
+	'danRer10': {
+		'sequence':
+			{
+				'recipe': 'danrer10-reference-genome-ucsc-v1',
+				'filepath': join(PREFIX,'share/ggd/Danio_rerio/danRer10/danrer10-reference-genome-ucsc-v1/1/danrer10-reference-genome-ucsc-v1.fa.gz')},
+		'gtf':
+			{
+				'recipe': 'danrer10-gtf-ensembl-v1',
+				'filepath': join(PREFIX,'share/ggd/Danio_rerio/danRer10/danrer10-gtf-ensembl-v1/1/danrer10-gtf-ensembl-v1.gtf.gz')}}
 }
 
 RECIPE_FILEPATH = BUILD_RECIPE_MAPPING[BUILD]
 
-preprocessed_segmentation = join(OUTDIR, DATA,"segmentation", "segmentation.pkl.gz")
+preprocessed_segmentation = join(OUTDIR, DATA, "segmentation", "segmentation.pkl.gz")
 
 
 # Main rule that sets the targets to obtain
@@ -74,7 +88,8 @@ rule job:
 		aggs=expand(join(OUTDIR, RESULTS, "aggregation", "gene_biotype", "{biotype}", RESULTFILE), biotype=BIOTYPES),
 		stats=join(BUILDPATH, recipeGTF, "gene_biotype", "gene_biotype_stats"),
 		mne=MNE_FILENAME,
-		gmtk=join(OUTDIR, RESULTS, "gmtk_parameters", RESULTFILE) if config['parameters'] else []
+		gmtk=join(OUTDIR, RESULTS, "gmtk_parameters", RESULTFILE) if config['parameters'] else [],
+		phastcons=join(OUTDIR, RESULTS, "phastcons", RESULTFILE)
 	params:
 		outfile=join(OUTDIR, PLOTS, '{file}'),
 		dendrogram=DENDROGRAM,
@@ -93,10 +108,42 @@ rule download_targets:
 	input:
 		RECIPE_FILEPATH['sequence']['filepath'],
 		RECIPE_FILEPATH['gtf']['filepath'],
+		RECIPE_FILEPATH['chromsizes']['filepath'] if BUILD == 'hg38' else [],
+		RECIPE_FILEPATH['phastcons']['filepath'] if BUILD == 'hg38' else [],
 		join(BUILDPATH, recipeGTF, "gene_biotype", "gene_biotype_stats")  # gene biotype separation output
 
+
+rule download_ggd_chromsizes:
+	input: []
+	output:
+		RECIPE_FILEPATH['chromsizes']['filepath']
+	params:
+		recipe=RECIPE_FILEPATH['chromsizes']['recipe'],
+		outdir=dirname(RECIPE_FILEPATH['chromsizes']['filepath'])
+	shell:
+		"""
+		rm -R {params.outdir}
+		ggd install --prefix {PREFIX} {params.recipe}
+		sed -i bak "1d" {output}
+		"""
+
+
+rule download_ggd_phastcons:
+	input: []
+	output:
+		RECIPE_FILEPATH['phastcons']['filepath']
+	params:
+		recipe=RECIPE_FILEPATH['phastcons']['recipe'],
+		outdir=dirname(RECIPE_FILEPATH['phastcons']['filepath'])
+	shell:
+		"""
+		rm -R {params.outdir}
+		ggd install --prefix {PREFIX} {params.recipe}
+		"""
+
+
 rule download_ggd_annotation:
-	input:
+	input: []
 	output:
 		RECIPE_FILEPATH['gtf']['filepath']
 	params:
@@ -109,7 +156,7 @@ rule download_ggd_annotation:
 		"""
 
 rule download_ggd_sequence:
-	input:
+	input: []
 	output:
 		RECIPE_FILEPATH['sequence']['filepath']
 	params:
@@ -119,7 +166,7 @@ rule download_ggd_sequence:
 		"""
 		rm -R {params.outdir}
 		ggd install --prefix {PREFIX}  {params.recipe}
-		zcat {output}.gz > {output}
+		gunzip -c {output}.gz > {output}
 		"""
 
 
@@ -153,6 +200,18 @@ rule create_gene_biotype_gtf:
 
 
 # ANALYZING RULES
+
+# Make phastcons column
+rule run_phastcons_script:
+	input:
+		chromsizes=RECIPE_FILEPATH['chromsizes']['filepath'],
+		phastcons=RECIPE_FILEPATH['phastcons']['filepath'],
+		segmentation=SEGMENTATION
+	output:
+		outfile=join(OUTDIR, RESULTS, "phastcons", RESULTFILE)
+	script:
+		"create_phastcons_results.py"
+
 
 # Segtools GMTK-Parameters execution
 rule run_segtools_gmtk_parameters:
@@ -286,7 +345,7 @@ rule create_overlap_results:
 # Visualization
 
 rule create_diagram:
-	input:
+	input: []
 	output:
 		"dag.svg",
 		"dag.png"

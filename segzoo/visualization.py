@@ -43,8 +43,8 @@ TITLE_FONTSIZE = 25 * FONT_SCALE / 1.5
 # Table options and properties
 TABLE_POS = "bottom"  # top / bottom / other to omit
 TABLE_HEIGHT = 1  # relative to the height of 2 rows from the mix matrix
-MIX_TABLE_CONTENT = [['max', 'max', 'max', 'max', 'max', 65],
-                     ['min', 'min', 'min', 'min', 'min', 35]]
+MIX_TABLE_CONTENT = [['max', 'max', 'max', 'max', 'max', 65, 'min', 'min'],
+                     ['min', 'min', 'min', 'min', 'min', 35, 'max', 'max']]
 
 # Color maps for the visualization
 cmap_gmtk = sns.diverging_palette(220, 10, as_cmap=True)
@@ -106,7 +106,7 @@ def human_format(num):
     if more_than_n_digits(num) or is_decimal_zero(num):
         return '{}{}'.format(int(num), magnit_chars[magnitude])
     else:
-        return '{:.1f}{}'.format(num, magnit_chars[magnitude])
+        return '{:.2f}{}'.format(num, magnit_chars[magnitude])
 
 
 def prettify_number(n):
@@ -177,6 +177,18 @@ def length_distribution(args):
     return res_len_hm, res_len_ann
 
 
+def phastcons(args):
+    """
+    Prepare phastcons result in a DataFrame
+    """
+    res_ann = pd.read_csv(args.phastcons, index_col=0, sep='\t')
+    res_ann.columns = ['Phastcons', 'Max Phastcons']
+
+    res_hm = (res_ann - res_ann.min()) / (res_ann.max() - res_ann.min())
+
+    return res_hm, res_ann
+
+
 def mix_data_matrix(args):
     """
     Prepare the mix matrix for the heatmap and its annotation, both in DataFrames
@@ -184,9 +196,13 @@ def mix_data_matrix(args):
     # Joining the matrices to create final heatmap and annotation
     res_nuc_hm, res_nuc_ann = nucleotide(args)
     res_len_hm, res_len_ann = length_distribution(args)
+    res_phastcons_hm, res_phastcons_ann = phastcons(args)
 
     res_ann = res_len_ann.join(res_nuc_ann)
+    res_ann = res_ann.join(res_phastcons_ann)
+
     res_hm = res_len_hm.join(res_nuc_hm)
+    res_hm = res_hm.join(res_phastcons_hm)
 
     return res_hm, res_ann
 
@@ -326,6 +342,7 @@ def parse_args(args):
                                       'labels and track names on the shown on the figure')
     parser.add_argument('--aggs', help='Aggregation results file')
     parser.add_argument('--stats', help='Gene biotype stats')
+    parser.add_argument('--phastcons', help='Phastcons result file')
     parser.add_argument('--outfile', help='The path of the resulting visualization, excluding file extension')
     return parser.parse_args(args)
 
@@ -344,6 +361,7 @@ if __name__ == '__main__':
                      '--mne', snakemake.input.mne,
                      '--aggs', snakemake.input.aggs,
                      '--stats', snakemake.input.stats,
+                     '--phastcons', snakemake.input.phastcons,
                      '--outfile', snakemake.params.outfile
                      ]
         args = parse_args(arg_list)
