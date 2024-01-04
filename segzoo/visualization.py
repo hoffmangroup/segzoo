@@ -25,7 +25,7 @@ mpl.use('Agg')
 # VARIABLES AND CONSTANTS
 
 # Heatmap proportion modifiers
-NUM_COMPONENTS = 8
+NUM_COMPONENTS = 7
 GMTK_FACTOR = 1
 MIX_FACTOR = 1.5
 AGG_FACTOR = 1
@@ -43,8 +43,8 @@ TITLE_FONTSIZE = 25 * FONT_SCALE / 1.5
 # Table options and properties
 TABLE_POS = "bottom"  # top / bottom / other to omit
 TABLE_HEIGHT = 1  # relative to the height of 2 rows from the mix matrix
-MIX_TABLE_CONTENT = [['max', 'max', 'max', 'max', 'max', 65, 'min', 'min'],
-                     ['min', 'min', 'min', 'min', 'min', 35, 'max', 'max']]
+MIX_TABLE_CONTENT = [['max', 'max', 'max', 'max', 'max', 65, 'max'],
+                     ['min', 'min', 'min', 'min', 'min', 35, 'min']]
 
 # Color maps for the visualization
 cmap_gmtk = sns.diverging_palette(220, 10, as_cmap=True)
@@ -111,7 +111,7 @@ def human_format(num):
 
 def prettify_number(n):
     """
-    Add space every three digits from left to right
+    Add space every three digits from right to left
 
     >>> prettify_number(1000)
     '1 000'
@@ -125,6 +125,7 @@ def gmtk_parameters(args):
     """
     Prepare the gmtk parameters in a DataFrame
     """
+
     def normalize_col(col):
         return (col - col.min()) / (col.max() - col.min())
 
@@ -167,6 +168,7 @@ def length_distribution(args):
     res_len_ann.index = res_len_ann.index.map(int)  # labels need to be integers
     res_len_ann.sort_index(inplace=True)
     res_len_ann.columns = ['Mean length', 'Median length', 'Std length', 'Base pairs (%)', 'Segments (%)']
+    col_order = ['Mean length', 'Median length', 'Std length', 'Segments (%)', 'Base pairs (%)']
 
     res_len_hm = res_len_ann.copy()
     # Interpolation of the parameters to rescale them between 0 and 1
@@ -182,7 +184,20 @@ def phastcons(args):
     Prepare phastcons result in a DataFrame
     """
     res_ann = pd.read_csv(args.phastcons, index_col=0, sep='\t')
-    res_ann.columns = ['Phastcons', 'Max Phastcons']
+    res_ann.columns = ['Mean PhastCons', 'Max PhastCons']
+    res_ann = res_ann[['Mean PhastCons']]
+
+    res_hm = (res_ann - res_ann.min()) / (res_ann.max() - res_ann.min())
+
+    return res_hm, res_ann
+
+
+def repeatmasker(args):
+    """
+    Prepare repeatmasker result in a DataFrame
+    """
+    res_ann = pd.read_csv(args.repeatmasker, index_col=0, sep='\t')
+    res_ann.columns = ['RepeatMasker']
 
     res_hm = (res_ann - res_ann.min()) / (res_ann.max() - res_ann.min())
 
@@ -287,7 +302,7 @@ def calc_dendrogram_label_col(labels, zero_threshold=4, one_threshold=10, two_th
             return ncol
     # Add one column for every increment increase in label length, rounding up
     # Add one to the numerator to make the visual look nicer
-    return 2 + math.ceil((longest_label_len-two_threshold+1)/increment)
+    return 2 + math.ceil((longest_label_len - two_threshold + 1) / increment)
 
 
 def generate_table(ax, n_cols, cbar, table_content, table_height):
@@ -343,6 +358,7 @@ def parse_args(args):
     parser.add_argument('--aggs', help='Aggregation results file')
     parser.add_argument('--stats', help='Gene biotype stats')
     parser.add_argument('--phastcons', help='Phastcons result file')
+    parser.add_argument('--repeatmasker', help='RepeatMasker result file')
     parser.add_argument('--outfile', help='The path of the resulting visualization, excluding file extension')
     return parser.parse_args(args)
 
@@ -362,6 +378,7 @@ if __name__ == '__main__':
                      '--aggs', snakemake.input.aggs,
                      '--stats', snakemake.input.stats,
                      '--phastcons', snakemake.input.phastcons,
+                     '--repeatmasker', snakemake.input.repeatmasker,
                      '--outfile', snakemake.params.outfile
                      ]
         args = parse_args(arg_list)
@@ -410,8 +427,9 @@ if __name__ == '__main__':
 
     # Create grid with axes following the ratios desired for the dimensions
     figure, axes = plt.subplots(1, len(WIDTH_RATIOS), figsize=(n_columns, table_height),
-                                gridspec_kw={"wspace": 9 / n_columns,
-                                             "width_ratios": WIDTH_RATIOS})
+                                gridspec_kw={
+                                    "wspace": 9 / n_columns,
+                                    "width_ratios": WIDTH_RATIOS})
 
     # If the user does not choose to add space in between dendrogram and gmtk parameters, move the space ax to the left
     # to avoid adding extra space

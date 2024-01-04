@@ -1,6 +1,5 @@
 import pandas as pd
 import pybedtools
-import snakemake.io
 
 REPEAT_FILE = snakemake.input.repeatmasker
 SEGMENTATION_FILE = snakemake.input.segmentation
@@ -12,5 +11,5 @@ res_bt = bt.coverage(REPEAT_FILE)
 res_df = res_bt.to_dataframe(header=None, names=RES_NAMES)
 
 gb = res_df.groupby('name').frac.mean()
-df = pd.DataFrame(gb, columns=['repeatmasker'])
+df = gb.to_frame(name='repeatmasker')
 df.to_csv(snakemake.output.outfile, sep='\t')

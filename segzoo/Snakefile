@@ -93,7 +93,8 @@ rule job:
 		stats=join(BUILDPATH, recipeGTF, "gene_biotype", "gene_biotype_stats"),
 		mne=MNE_FILENAME,
 		gmtk=join(OUTDIR, RESULTS, "gmtk_parameters", RESULTFILE) if config['parameters'] else [],
-		phastcons=join(OUTDIR, RESULTS, "phastcons", RESULTFILE)
+		phastcons=join(OUTDIR, RESULTS, "phastcons", RESULTFILE),
+		repeatmasker=join(OUTDIR, RESULTS, "overlap_repeatmasker", RESULTFILE),
 	params:
 		outfile=join(OUTDIR, PLOTS, '{file}'),
 		dendrogram=DENDROGRAM,
@@ -120,14 +121,20 @@ rule download_targets:
 rule download_ggd_repeatmasker:
 	input: []
 	output:
-		RECIPE_FILEPATH['repeatmasker']['filepath']
+		bedgz=RECIPE_FILEPATH['repeatmasker']['filepath'],
+		bed=RECIPE_FILEPATH['repeatmasker']['filepath'].replace('.bed.gz', '.bed'),
+		bednostrand=RECIPE_FILEPATH['repeatmasker']['filepath'].replace('.bed.gz', '.nostrand.bed'),
 	params:
 		recipe=RECIPE_FILEPATH['repeatmasker']['recipe'],
 		outdir=dirname(RECIPE_FILEPATH['repeatmasker']['filepath'])
 	shell:
 		"""
 		rm -R {params.outdir}
+		ggd uninstall {params.recipe}
 		ggd install --prefix {PREFIX} {params.recipe}
+		gunzip -c {output.bedgz} > {output.bed}
+		sed -i bak "1,2d" {output.bed}
+		awk -F"\\t" 'BEGIN{{OFS=FS}}{{$4 = "repeat"; print}}' {output.bed} > {output.bednostrand}
 		"""
 
 
@@ -218,6 +225,16 @@ rule create_gene_biotype_gtf:
 
 
 # ANALYZING RULES
+
+# # Make repeatmasker column
+# rule run_repeatmasker_script:
+# 	input:
+# 		repeatmasker=RECIPE_FILEPATH['repeatmasker']['filepath'],
+# 		segmentation=SEGMENTATION
+# 	output:
+# 		outfile=join(OUTDIR, RESULTS, "repeatmasker", RESULTFILE)
+# 	script:
+# 		"create_repeatmasker_results.py"
 
 # Make phastcons column
 rule run_phastcons_script:
@@ -351,6 +368,20 @@ rule run_segtools_overlap:
 	shell:
 		"segtools-overlap --by=bases {QUIET} {CLOBBER} {NOPLOT} --outdir {params.outdir} {SEGMENTATION} {input.gtf}"
 
+
+# Segtools Overlap results obtention
+rule run_segtools_overlap_repeatmasker:
+	input:
+		SEGMENTATION,
+		bed=RECIPE_FILEPATH['repeatmasker']['filepath'].replace('.bed.gz', '.nostrand.bed')
+	output:
+		join(OUTDIR, DATA, "overlap_repeatmasker", "overlap.tab")
+	params:
+		outdir=join(OUTDIR, DATA, "overlap_repeatmasker")
+	shell:
+		"segtools-overlap --by=bases {QUIET} {CLOBBER} {NOPLOT} --outdir {params.outdir} {SEGMENTATION} {input.bed}"
+
+
 rule create_overlap_results:
 	input:
 		infile=join(OUTDIR, DATA, "overlap", "overlap.tab")
@@ -359,6 +390,14 @@ rule create_overlap_results:
 	script:
 		"create_overlap_results.py"
 
+
+rule create_overlap_repeatmasker_results:
+	input:
+		infile=join(OUTDIR, DATA, "overlap_repeatmasker", "overlap.tab")
+	output:
+		outfile=join(OUTDIR, RESULTS, "overlap_repeatmasker", RESULTFILE)
+	script:
+		"create_overlap_repeatmasker_results.py"
 
 # Visualization
 
