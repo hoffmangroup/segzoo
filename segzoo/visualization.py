@@ -30,7 +30,7 @@ GMTK_FACTOR = 1
 MIX_FACTOR = 1.5
 AGG_FACTOR = 1
 OVERLAP_FACTOR = 1
-OVERLAP_COLUMN_NUMBER = 2
+OVERLAP_COLUMN_NUMBER = 3
 ROW_FACTOR = 1
 
 # Font scaling variables
@@ -39,6 +39,14 @@ sns.set(font_scale=FONT_SCALE)
 # sns.set_context("poster")
 LABEL_FONTSIZE = 20 * FONT_SCALE / 1.5
 TITLE_FONTSIZE = 25 * FONT_SCALE / 1.5
+
+# plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
+# plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
+# plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
+plt.rc('xtick', labelsize=LABEL_FONTSIZE)    # fontsize of the tick labels
+plt.rc('ytick', labelsize=LABEL_FONTSIZE)    # fontsize of the tick labels
+# plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
+# plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 
 # Table options and properties
 TABLE_POS = "bottom"  # top / bottom / other to omit
@@ -169,7 +177,7 @@ def length_distribution(args):
     res_len_ann.sort_index(inplace=True)
     res_len_ann.columns = ['Mean length', 'Median length', 'Std length', 'Base pairs (%)', 'Segments (%)']
     col_order = ['Mean length', 'Median length', 'Std length', 'Segments (%)', 'Base pairs (%)']
-
+    res_len_ann = res_len_ann[col_order]
     res_len_hm = res_len_ann.copy()
     # Interpolation of the parameters to rescale them between 0 and 1
     for col in res_len_hm.columns:
@@ -196,12 +204,12 @@ def repeatmasker(args):
     """
     Prepare repeatmasker result in a DataFrame
     """
-    res_ann = pd.read_csv(args.repeatmasker, index_col=0, sep='\t')
-    res_ann.columns = ['RepeatMasker']
-
-    res_hm = (res_ann - res_ann.min()) / (res_ann.max() - res_ann.min())
-
-    return res_hm, res_ann
+    df = pd.read_csv(args.repeatmasker, index_col=0, sep='\t')
+    df.sort_index(inplace=True)
+    df = df * 100
+    df = df.apply(round).astype(int)
+    df.columns = ['RepeatMasker']
+    return df
 
 
 def mix_data_matrix(args):
@@ -230,6 +238,7 @@ def overlap(args):
     df.sort_index(inplace=True)
     df = df * 100
     df = df.apply(round).astype(int)
+    df.columns = ['Genic', 'Intergenic']
     return df
 
 
@@ -484,24 +493,22 @@ if __name__ == '__main__':
         cbar_gmtk = g_gmtk.collections[0].colorbar
 
         if args.normalize_gmtk:
-            cbar_gmtk.set_ticks(gmtk_max_min)
+            # cbar_gmtk.set_ticks(gmtk_max_min)
             cbar_gmtk.set_ticks([1, 0])
-            cbar_gmtk.ax.set_yticklabels(['col\nmax', 'col\nmin'], fontsize=LABEL_FONTSIZE)
+            cbar_gmtk.ax.set_yticklabels(['col\nmax', 'col\nmin'])
 
             # Add min-max table for parameters matrix
             gmtk_table_content = [unnorm_res_gmtk.max().apply(human_format).tolist(),
                                   unnorm_res_gmtk.min().apply(human_format).tolist()]
             generate_table(ax_gmtk, res_gmtk.shape[1], cbar_gmtk, gmtk_table_content, table_height)
-        else:
-            cbar_gmtk.ax.set_yticklabels(cbar_gmtk.ax.get_yticklabels(), fontsize=LABEL_FONTSIZE)
 
         # Setting titles and axis labels
         if not args.dendrogram:
-            ax_gmtk.set_yticklabels(new_labels, rotation=0, fontsize=LABEL_FONTSIZE)  # put label names horizontally
+            ax_gmtk.set_yticklabels(new_labels, rotation=0)  # put label names horizontally
         else:
             ax_gmtk.set_yticklabels('')
             ax_gmtk.set_ylabel('')
-        ax_gmtk.set_xticklabels(new_tracks, rotation=90, fontsize=LABEL_FONTSIZE)
+        ax_gmtk.set_xticklabels(new_tracks, rotation=90)
         ax_gmtk.set_title('Parameters',
                           fontsize=TITLE_FONTSIZE,
                           position=(0, 1 + 0.6 / res_gmtk.shape[0] * FONT_SCALE / 1.5),
@@ -519,38 +526,46 @@ if __name__ == '__main__':
                         ax=ax_mix, cbar_ax=ax_mix_cbar, fmt='')
     cbar_mix = g_mix.collections[0].colorbar
     cbar_mix.set_ticks([0, 1])
-    cbar_mix.ax.set_yticklabels(['low', 'high'], fontsize=LABEL_FONTSIZE)
+    cbar_mix.ax.set_yticklabels(['low', 'high'])
     if args.gmtk:
         ax_mix.set_ylabel('')
-    ax_mix.set_xticklabels(ax_mix.get_xticklabels(), rotation=90, fontsize=LABEL_FONTSIZE)
+    ax_mix.set_xticklabels(ax_mix.get_xticklabels(), rotation=90)
 
     # Setting axis labels for the mix matrix
     if args.gmtk:
         ax_mix.set_yticklabels([])
     else:
-        ax_mix.set_yticklabels(new_labels, rotation=0, fontsize=LABEL_FONTSIZE)
+        ax_mix.set_yticklabels(new_labels, rotation=0)
 
+    ax_mix.vlines(x=4, ymin=0, ymax=res_mix_hm.shape[0], colors='white', lw=3)
+
+    ax_mix.text(0, -0.1 * FONT_SCALE / 1.5, "Segments", fontsize=LABEL_FONTSIZE, ha='left', va='bottom')
+    ax_mix.text(4, -0.1 * FONT_SCALE / 1.5, "Bases", fontsize=LABEL_FONTSIZE, ha='left', va='bottom')
     # Add min-max table for mix matrix
     generate_table(ax_mix, res_mix_hm.shape[1], cbar_mix, MIX_TABLE_CONTENT, table_height)
 
     # Overlap
     divider_overlap = make_axes_locatable(ax_overlap)
     ax_overlap_cbar = divider_overlap.append_axes("right", size=0.35, pad=0.3)
-    overlap_hm = overlap(args).loc[row_ordering]
+    overlap_genic_interg_hm = overlap(args).loc[row_ordering]
+    overlap_repeatmasker_hm = repeatmasker(args).loc[row_ordering]
+    overlap_hm = pd.concat([overlap_genic_interg_hm, overlap_repeatmasker_hm], axis=1)
+
     g_overlap = sns.heatmap(overlap_hm, vmin=0, vmax=100, annot=True, cbar=True, fmt='.5g', yticklabels=False,
                             cmap=cmap_overlap, ax=ax_overlap, cbar_ax=ax_overlap_cbar)
 
     cbar_overlap = g_overlap.collections[0].colorbar
     cbar_overlap.set_ticks([0, 100])
-    cbar_overlap.ax.set_yticklabels(['0%', '100%'], fontsize=LABEL_FONTSIZE)
+    cbar_overlap.ax.set_yticklabels(['0%', '100%'])
 
     ax_overlap.set_ylabel('')
     ax_overlap.text(0, -0.6 * FONT_SCALE / 1.5, "Overlap", fontsize=TITLE_FONTSIZE, ha='left', va='bottom')
-    ax_overlap.set_xticklabels(ax_overlap.get_xticklabels(), rotation=90, fontsize=LABEL_FONTSIZE)
+    ax_overlap.set_xticklabels(ax_overlap.get_xticklabels(), rotation=90)
     ax_overlap.set_title('Bases',
                          fontsize=LABEL_FONTSIZE,
                          position=(0, 1 + 0.6 / 10 * FONT_SCALE / 1.5),
                          ha='left', va='bottom')
+
 
     # Aggregation
     stats_df = pd.read_csv(args.stats, index_col=0, sep='\t')  # data stored when creating the gtf files
@@ -565,7 +580,7 @@ if __name__ == '__main__':
         ax_agg_aux.set_title('{} (n={})'.format(biotype, prettify_number(stats_df.loc[biotype, 'genes'])), **title_args)
         ax_agg_aux.set_yticklabels([])
         ax_agg_aux.set_ylabel('')
-        ax_agg_aux.set_xticklabels(ax_agg_aux.get_xticklabels(), rotation=90, fontsize=LABEL_FONTSIZE)
+        ax_agg_aux.set_xticklabels(ax_agg_aux.get_xticklabels(), rotation=90)
 
     if len(BIOTYPES) > 0:
         ax_agg_cbar = divider_agg.append_axes("right", size=0.35, pad=0.3)
@@ -578,13 +593,12 @@ if __name__ == '__main__':
                          **title_args)
         ax_agg.set_yticklabels([])
         ax_agg.set_ylabel('')
-        ax_agg.set_xticklabels(ax_agg.get_xticklabels(), rotation=90, fontsize=LABEL_FONTSIZE)
+        ax_agg.set_xticklabels(ax_agg.get_xticklabels(), rotation=90)
 
         # Edit the colorbar created by the first biotype
         cbar_agg = g_agg.collections[0].colorbar
         cbar_agg.set_ticks([0, agg_vmax])
-        cbar_agg.ax.set_yticklabels(['0%', '{:.0f}%'.format(agg_vmax)],
-                                    fontsize=LABEL_FONTSIZE)  # the format takes out decimals
+        cbar_agg.ax.set_yticklabels(['0%', '{:.0f}%'.format(agg_vmax)])  # the format takes out decimals
     else:
         figure.delaxes(ax_agg)
 
