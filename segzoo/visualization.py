@@ -25,12 +25,12 @@ mpl.use('Agg')
 # VARIABLES AND CONSTANTS
 
 # Heatmap proportion modifiers
-NUM_COMPONENTS = 7
+NUM_COMPONENTS = 6
 GMTK_FACTOR = 1
 MIX_FACTOR = 1.5
 AGG_FACTOR = 1
 OVERLAP_FACTOR = 1
-OVERLAP_COLUMN_NUMBER = 3
+OVERLAP_COLUMN_NUMBER = 2
 ROW_FACTOR = 1
 
 # Font scaling variables
@@ -38,15 +38,15 @@ FONT_SCALE = 1.5
 sns.set(font_scale=FONT_SCALE)
 # sns.set_context("poster")
 LABEL_FONTSIZE = 20 * FONT_SCALE / 1.5
-TITLE_FONTSIZE = 25 * FONT_SCALE / 1.5
+MAIN_TITLE_FONTSIZE = 25 * FONT_SCALE / 1.5
+SUBTITLE_FONTSIZE = 20 * FONT_SCALE / 1.5
 
-# plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
-# plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
-# plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
-plt.rc('xtick', labelsize=LABEL_FONTSIZE)    # fontsize of the tick labels
-plt.rc('ytick', labelsize=LABEL_FONTSIZE)    # fontsize of the tick labels
-# plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
-# plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+# Set the vertical positions of the titles.
+TOP_TITLE_Y = -0.6 * FONT_SCALE / 1.5
+BOTTOM_TITLE_Y = -0.1 * FONT_SCALE / 1.5
+
+plt.rc('xtick', labelsize=LABEL_FONTSIZE)
+plt.rc('ytick', labelsize=LABEL_FONTSIZE)
 
 # Table options and properties
 TABLE_POS = "bottom"  # top / bottom / other to omit
@@ -175,8 +175,8 @@ def length_distribution(args):
     # Rename columns
     res_len_ann.index = res_len_ann.index.map(int)  # labels need to be integers
     res_len_ann.sort_index(inplace=True)
-    res_len_ann.columns = ['Mean length', 'Median length', 'Std length', 'Base pairs (%)', 'Segments (%)']
-    col_order = ['Mean length', 'Median length', 'Std length', 'Segments (%)', 'Base pairs (%)']
+    res_len_ann.columns = ['Mean length', 'Median length', 'Std length', 'Bases (%)', 'Segments (%)']
+    col_order = ['Segments (%)', 'Mean length', 'Median length', 'Std length', 'Bases (%)']
     res_len_ann = res_len_ann[col_order]
     res_len_hm = res_len_ann.copy()
     # Interpolation of the parameters to rescale them between 0 and 1
@@ -394,6 +394,12 @@ if __name__ == '__main__':
     else:
         args = parse_args(sys.argv[1:])
 
+    # update environment variables
+    if args.repeatmasker:
+        OVERLAP_COLUMN_NUMBER += 1
+    if args.phastcons:
+        NUM_COMPONENTS += 1
+
     # Call the functions that obtain the results in DataFrames
     if args.gmtk:
         unnorm_res_gmtk, norm_res_gmtk, gmtk_max_min = gmtk_parameters(args)
@@ -509,10 +515,7 @@ if __name__ == '__main__':
             ax_gmtk.set_yticklabels('')
             ax_gmtk.set_ylabel('')
         ax_gmtk.set_xticklabels(new_tracks, rotation=90)
-        ax_gmtk.set_title('Parameters',
-                          fontsize=TITLE_FONTSIZE,
-                          position=(0, 1 + 0.6 / res_gmtk.shape[0] * FONT_SCALE / 1.5),
-                          ha='left', va='bottom')
+        ax_gmtk.text(x=0, y=BOTTOM_TITLE_Y, s='Parameters', fontsize=MAIN_TITLE_FONTSIZE, ha='left', va='bottom')
     else:
         figure.delaxes(ax_gmtk)
         figure.delaxes(ax_dendrogram)
@@ -529,7 +532,7 @@ if __name__ == '__main__':
     cbar_mix.ax.set_yticklabels(['low', 'high'])
     if args.gmtk:
         ax_mix.set_ylabel('')
-    ax_mix.set_xticklabels(ax_mix.get_xticklabels(), rotation=90)
+    ax_mix.tick_params(axis='x', rotation=90)
 
     # Setting axis labels for the mix matrix
     if args.gmtk:
@@ -537,10 +540,10 @@ if __name__ == '__main__':
     else:
         ax_mix.set_yticklabels(new_labels, rotation=0)
 
-    ax_mix.vlines(x=4, ymin=0, ymax=res_mix_hm.shape[0], colors='white', lw=3)
+    ax_mix.vlines(x=4, ymin=0, ymax=res_mix_hm.shape[0], colors='black', lw=1)
 
-    ax_mix.text(0, -0.1 * FONT_SCALE / 1.5, "Segments", fontsize=LABEL_FONTSIZE, ha='left', va='bottom')
-    ax_mix.text(4, -0.1 * FONT_SCALE / 1.5, "Bases", fontsize=LABEL_FONTSIZE, ha='left', va='bottom')
+    ax_mix.text(0, BOTTOM_TITLE_Y, "Segments", fontsize=SUBTITLE_FONTSIZE, ha='left', va='bottom')
+    ax_mix.text(4, BOTTOM_TITLE_Y, "Bases", fontsize=SUBTITLE_FONTSIZE, ha='left', va='bottom')
     # Add min-max table for mix matrix
     generate_table(ax_mix, res_mix_hm.shape[1], cbar_mix, MIX_TABLE_CONTENT, table_height)
 
@@ -559,45 +562,41 @@ if __name__ == '__main__':
     cbar_overlap.ax.set_yticklabels(['0%', '100%'])
 
     ax_overlap.set_ylabel('')
-    ax_overlap.text(0, -0.6 * FONT_SCALE / 1.5, "Overlap", fontsize=TITLE_FONTSIZE, ha='left', va='bottom')
-    ax_overlap.set_xticklabels(ax_overlap.get_xticklabels(), rotation=90)
-    ax_overlap.set_title('Bases',
-                         fontsize=LABEL_FONTSIZE,
-                         position=(0, 1 + 0.6 / 10 * FONT_SCALE / 1.5),
-                         ha='left', va='bottom')
+    ax_overlap.text(x=0, y=TOP_TITLE_Y, s="Overlap", fontsize=MAIN_TITLE_FONTSIZE, ha='left', va='bottom')
+    ax_overlap.tick_params(axis='x', rotation=90)
+    ax_overlap.text(x=0, y=BOTTOM_TITLE_Y, s='Bases', fontsize=SUBTITLE_FONTSIZE, ha='left', va='bottom')
 
 
     # Aggregation
     stats_df = pd.read_csv(args.stats, index_col=0, sep='\t')  # data stored when creating the gtf files
     divider_agg = make_axes_locatable(ax_agg)
-    title_args = dict(fontsize=LABEL_FONTSIZE, position=(1.0, 1.0), ha='right', va='bottom')
+
+    # We want one axis per biotype and the axis for the first biotype already exists: `ax_agg`.
+    # Create the remaining axes.
+    rem_axs = [divider_agg.append_axes("right", size="100%", pad=0.3)] * (len(BIOTYPES) - 1)
+    ax_aggs = [ax_agg] + rem_axs
 
     # Divide axes, plot heatmap and edit axis configuration for each biotype
-    for biotype in BIOTYPES[1:]:
-        ax_agg_aux = divider_agg.append_axes("right", size="100%", pad=0.3)
+    for cur_ax, biotype in zip(ax_aggs, BIOTYPES):
+        n_agg_columns = res_agg_dict[biotype].shape[1]
         sns.heatmap(res_agg_dict[biotype].loc[row_ordering], annot=True, cbar=False, vmin=0, vmax=agg_vmax,
-                    cmap=cmap_agg, ax=ax_agg_aux, fmt='.5g')
-        ax_agg_aux.set_title('{} (n={})'.format(biotype, prettify_number(stats_df.loc[biotype, 'genes'])), **title_args)
-        ax_agg_aux.set_yticklabels([])
-        ax_agg_aux.set_ylabel('')
-        ax_agg_aux.set_xticklabels(ax_agg_aux.get_xticklabels(), rotation=90)
+                    cmap=cmap_agg, ax=cur_ax, fmt='.5g')
+        n_gene = prettify_number(stats_df.loc[biotype, 'genes'])
+        subtitle = f'{biotype} (n={n_gene})'
+        cur_ax.text(x=n_agg_columns, y=BOTTOM_TITLE_Y, s=subtitle, ha='right', va='bottom')
+        cur_ax.set_yticklabels([])
+        cur_ax.set_ylabel('')
+        cur_ax.tick_params(axis='x', rotation=90)
+
 
     if len(BIOTYPES) > 0:
+        # Add title
+        ax_agg.text(x=0, y=TOP_TITLE_Y, s="Aggregation", fontsize=MAIN_TITLE_FONTSIZE, ha='left', va='bottom')
+
+        # Add colorbar
         ax_agg_cbar = divider_agg.append_axes("right", size=0.35, pad=0.3)
-
-        ax_agg.text(0, -0.6 * FONT_SCALE / 1.5, "Aggregation", fontsize=TITLE_FONTSIZE, ha='left', va='bottom')
-        g_agg = sns.heatmap(res_agg_dict[BIOTYPES[0]].loc[row_ordering], annot=True, cbar=True, vmin=0, vmax=agg_vmax,
-                            cbar_ax=ax_agg_cbar,
-                            cmap=cmap_agg, ax=ax_agg, fmt='.5g')
-        ax_agg.set_title('{} (n={})'.format(BIOTYPES[0], prettify_number(stats_df.loc[BIOTYPES[0], 'genes'])),
-                         **title_args)
-        ax_agg.set_yticklabels([])
-        ax_agg.set_ylabel('')
-        ax_agg.set_xticklabels(ax_agg.get_xticklabels(), rotation=90)
-
-        # Edit the colorbar created by the first biotype
-        cbar_agg = g_agg.collections[0].colorbar
-        cbar_agg.set_ticks([0, agg_vmax])
+        cbar_agg = mpl.colorbar.ColorbarBase(ax_agg_cbar, cmap=cmap_agg, orientation='vertical')
+        cbar_agg.set_ticks([0, 1])
         cbar_agg.ax.set_yticklabels(['0%', '{:.0f}%'.format(agg_vmax)])  # the format takes out decimals
     else:
         figure.delaxes(ax_agg)
