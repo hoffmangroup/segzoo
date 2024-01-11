@@ -48,6 +48,7 @@ BOTTOM_TITLE_Y = -0.1 * FONT_SCALE / 1.5
 plt.rc('xtick', labelsize=LABEL_FONTSIZE)
 plt.rc('ytick', labelsize=LABEL_FONTSIZE)
 
+YTICKLABELS = False
 INDEX_AXES_X_COORD = -0.1
 INDEX_AXES_Y_COORD = 1.12
 INDEX_AXES_X_DATACOORD = -0.3
@@ -138,7 +139,7 @@ def gmtk_parameters(args):
     Prepare the gmtk parameters in a DataFrame.
     """
     if not args.gmtk:
-        return pd.DataFrame()
+        return pd.DataFrame(), pd.DataFrame(), [None, None]
 
     def normalize_col(col):
         return (col - col.min()) / (col.max() - col.min())
@@ -146,9 +147,16 @@ def gmtk_parameters(args):
     df = pd.read_csv(args.gmtk, index_col=0, sep='\t')
     df.sort_index(inplace=True)
     df.index = df.index.astype(str)
-    normalized_df = df.apply(normalize_col, axis=0)
-    normalized_df.index = normalized_df.index.astype(str)
-    return df, normalized_df, [df.max().max(), df.min().min()]
+
+    table_content_df = pd.concat([
+        df.max().apply(human_format),
+        df.min().apply(human_format)],
+        axis=1).T
+
+    if args.normalize_gmtk:
+        df = df.apply(normalize_col, axis=0)
+
+    return df, table_content_df
 
 
 def nucleotide(args):
@@ -400,8 +408,7 @@ def main(args):
         NUM_COMPONENTS += 1
 
     # Call the functions that obtain the results in DataFrames
-    unnorm_res_gmtk, norm_res_gmtk, gmtk_max_min = gmtk_parameters(args)
-    res_gmtk = norm_res_gmtk.copy() if args.normalize_gmtk else unnorm_res_gmtk.copy()
+    res_gmtk, gmtk_table_content_df = gmtk_parameters(args)
 
     res_mix_hm, res_mix_ann = mix_data_matrix(args)
     overlap_genic_interg_hm = overlap(args)
@@ -410,7 +417,7 @@ def main(args):
 
     res_agg_dict, agg_vmax = aggregation(args)
 
-    heatmaps = [res_gmtk, unnorm_res_gmtk, norm_res_gmtk, res_mix_hm, res_mix_ann, overlap_hm]
+    heatmaps = [res_gmtk, res_mix_hm, res_mix_ann, overlap_hm]
     heatmaps = heatmaps + list(res_agg_dict.values())
 
     # Read labels from mne file
@@ -422,38 +429,38 @@ def main(args):
         heatmaps[i].index = heatmaps[i].index.map(label_translator)
 
     row_ordering = new_labels
-    longest_label_len = max(len(l) for l in new_labels)
 
     # Dimensioning variables
-    DENDROGRAM_COL = 2
-    DENDROGRAM_LABELS_COL = calc_dendrogram_label_col(new_labels) if args.dendrogram else 0
-    GMTK_COL = res_gmtk.shape[1] * GMTK_FACTOR + 1
-    MIX_COL = res_mix_hm.shape[1] * MIX_FACTOR + 1
-    OVERLAP_COL = OVERLAP_COLUMN_NUMBER * OVERLAP_FACTOR + 1
-    AGG_COL = len(BIOTYPES) * NUM_COMPONENTS * AGG_FACTOR + 1
+    dendrogram_col = 2
+    dendrogram_labels_col = calc_dendrogram_label_col(new_labels) if args.dendrogram else 0
+    gmtk_col = res_gmtk.shape[1] * GMTK_FACTOR + 1
+    mix_col = res_mix_hm.shape[1] * MIX_FACTOR + 1
+    overlap_col = OVERLAP_COLUMN_NUMBER * OVERLAP_FACTOR + 1
+    agg_col = len(BIOTYPES) * NUM_COMPONENTS * AGG_FACTOR + 1
 
     table_height = res_mix_hm.shape[0] * ROW_FACTOR
-    n_columns = DENDROGRAM_COL + DENDROGRAM_LABELS_COL + GMTK_COL + MIX_COL + OVERLAP_COL + AGG_COL
+    n_columns = dendrogram_col + dendrogram_labels_col + gmtk_col + mix_col + overlap_col + agg_col
 
     # If do not add space in between dendrogram and gmtk parameters, move the space ax to the left
     # to avoid adding extra space
-    if DENDROGRAM_LABELS_COL:
-        WIDTH_RATIOS = [DENDROGRAM_COL, DENDROGRAM_LABELS_COL - 1, GMTK_COL, MIX_COL, OVERLAP_COL, AGG_COL]
+    if dendrogram_labels_col:
+        width_ratios = [dendrogram_col, dendrogram_labels_col - 1, gmtk_col, mix_col, overlap_col, agg_col]
     else:
-        WIDTH_RATIOS = [DENDROGRAM_COL, GMTK_COL, MIX_COL, OVERLAP_COL, AGG_COL]
+        width_ratios = [dendrogram_col, gmtk_col, mix_col, overlap_col, agg_col]
 
     # Create grid with axes following the ratios desired for the dimensions
-    figure, axes = plt.subplots(1, len(WIDTH_RATIOS), figsize=(n_columns, table_height),
+    figure, axes = plt.subplots(1, len(width_ratios), figsize=(n_columns, table_height),
                                 gridspec_kw={
                                     "wspace": 9 / n_columns,
-                                    "width_ratios": WIDTH_RATIOS})
+                                    "width_ratios": width_ratios})
 
     # If the user does not choose to add space in between dendrogram and gmtk parameters, move the space ax to the left
     # to avoid adding extra space
-    if DENDROGRAM_LABELS_COL:
+    if dendrogram_labels_col:
         ax_dendrogram, ax_dendrogram_labels, ax_gmtk, ax_mix, ax_overlap, ax_agg = axes
     else:
         ax_dendrogram, ax_gmtk, ax_mix, ax_overlap, ax_agg = axes
+        ax_dendrogram_labels = None
 
     # GMTK parameters
     if args.gmtk:
@@ -465,12 +472,10 @@ def main(args):
             row_dendrogram = sch.dendrogram(row_linkage_matrix, ax=ax_dendrogram, orientation='left',
                                             color_threshold=0, above_threshold_color='k',
                                             leaf_font_size=int(LABEL_FONTSIZE),
-                                            labels=new_labels)
+                                            labels=res_gmtk.index)
 
             row_ordering = [label_translator[str(l)] for l in row_dendrogram['leaves']][::-1]
             res_gmtk = res_gmtk.loc[row_ordering]
-            unnorm_res_gmtk = unnorm_res_gmtk.loc[row_ordering]
-            norm_res_gmtk = norm_res_gmtk.loc[row_ordering]
 
             for i, hm in enumerate(heatmaps):
                 heatmaps[i] = heatmaps[i].reindex(index=row_ordering, copy=False)
@@ -491,10 +496,9 @@ def main(args):
             col_dendrogram = sch.dendrogram(col_linkage_matrix, no_plot=True)
             col_ordering = [res_gmtk.columns[leaf_index] for leaf_index in col_dendrogram['leaves']]
             res_gmtk = res_gmtk[col_ordering]
-            unnorm_res_gmtk = unnorm_res_gmtk[col_ordering]
-            new_tracks = col_ordering
+            gmtk_table_content_df = gmtk_table_content_df[col_ordering]
 
-            if DENDROGRAM_LABELS_COL:
+            if dendrogram_labels_col:
                 ax_dendrogram_labels.set_facecolor('None')
                 ax_dendrogram_labels.set_xticklabels('')
                 ax_dendrogram_labels.set_yticklabels('')
@@ -506,24 +510,22 @@ def main(args):
         g_gmtk = sns.heatmap(res_gmtk, cmap=cmap_gmtk, ax=ax_gmtk, cbar_ax=ax_gmtk_cbar)
 
         cbar_gmtk = g_gmtk.collections[0].colorbar
+        cbar_gmtk.set_ticks([res_gmtk.max().max(), res_gmtk.min().min()])
 
         if args.normalize_gmtk:
-            cbar_gmtk.set_ticks([1, 0])
             cbar_gmtk.ax.set_yticklabels(['col\nmax', 'col\nmin'])
 
             # Add min-max table for parameters matrix
-            gmtk_table_content = [unnorm_res_gmtk.max().apply(human_format).tolist(),
-                                  unnorm_res_gmtk.min().apply(human_format).tolist()]
+            gmtk_table_content = gmtk_table_content_df.values.tolist()
             generate_table(ax_gmtk, res_gmtk.shape[1], cbar_gmtk, gmtk_table_content, table_height, figure)
-        else:
-            cbar_gmtk.set_ticks(gmtk_max_min)
+
 
         # Setting titles and axis labels
         if not args.dendrogram:
+            ax_gmtk.set_ylabel('Label')
             ax_gmtk.tick_params(axis='y', rotation=0)
             ax_gmtk.text(INDEX_AXES_X_DATACOORD, INDEX_AXES_Y_COORD, "a", fontsize=LABEL_FONTSIZE + 2, ha='right',
                          va='top', transform=ax_gmtk.get_xaxis_transform())
-
         else:
             ax_gmtk.set_yticklabels('')
             ax_gmtk.set_ylabel('')
@@ -547,14 +549,13 @@ def main(args):
     cbar_mix = g_mix.collections[0].colorbar
     cbar_mix.set_ticks([0, 1])
     cbar_mix.ax.set_yticklabels(['low', 'high'])
+
+    ax_mix.tick_params(axis='x', rotation=90)
     if args.gmtk:
         ax_mix.set_ylabel('')
-    ax_mix.tick_params(axis='x', rotation=90)
-
-    # Setting axis labels for the mix matrix
-    if args.gmtk:
         ax_mix.set_yticklabels([])
     else:
+        ax_mix.set_ylabel('Label')
         ax_mix.tick_params(axis='y', rotation=0)
 
     ax_mix.vlines(x=4, ymin=0, ymax=res_mix_hm.shape[0], colors='black', lw=1)
@@ -568,7 +569,7 @@ def main(args):
     divider_overlap = make_axes_locatable(ax_overlap)
     ax_overlap_cbar = divider_overlap.append_axes("right", size=0.35, pad=0.3)
     overlap_hm = overlap_hm.loc[row_ordering]
-    g_overlap = sns.heatmap(overlap_hm, vmin=0, vmax=100, annot=True, cbar=True, fmt='.5g', yticklabels=False,
+    g_overlap = sns.heatmap(overlap_hm, vmin=0, vmax=100, annot=True, cbar=True, fmt='.5g', yticklabels=YTICKLABELS,
                             cmap=cmap_overlap, ax=ax_overlap, cbar_ax=ax_overlap_cbar)
 
     cbar_overlap = g_overlap.collections[0].colorbar
@@ -597,11 +598,10 @@ def main(args):
     for cur_ax, biotype in zip(ax_aggs, BIOTYPES):
         n_agg_columns = res_agg_dict[biotype].shape[1]
         sns.heatmap(res_agg_dict[biotype].loc[row_ordering], annot=True, cbar=False, vmin=0, vmax=agg_vmax,
-                    cmap=cmap_agg, ax=cur_ax, fmt='.5g')
+                    cmap=cmap_agg, ax=cur_ax, fmt='.5g', yticklabels=YTICKLABELS)
         n_gene = prettify_number(stats_df.loc[biotype, 'genes'])
         subtitle = f'{biotype} (n={n_gene})'
         cur_ax.text(x=n_agg_columns, y=BOTTOM_TITLE_Y, s=subtitle, ha='right', va='bottom')
-        cur_ax.set_yticklabels([])
         cur_ax.set_ylabel('')
         cur_ax.tick_params(axis='x', rotation=90)
 
