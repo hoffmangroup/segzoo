@@ -280,7 +280,7 @@ def aggregation(args):
     return df_dict, max_value
 
 
-def get_mne_ticklabels(filename, track_labels=[], label_labels=[]):
+def get_mne_ticklabels(filename, track_labels=(), label_labels=()):
     """
     Parse mne file and return updated tracks and labels
     """
@@ -332,7 +332,7 @@ def calc_dendrogram_label_col(labels, zero_threshold=4, one_threshold=10, two_th
     return 2 + math.ceil((longest_label_len - two_threshold + 1) / increment)
 
 
-def generate_table(ax, n_cols, cbar, table_content, table_height):
+def generate_table(ax, n_cols, cbar, table_content, table_height, figure):
     """Generate table underneath a heatmap plot"""
     high_low_table = ax.table(
         cellText=table_content,
@@ -371,7 +371,6 @@ def parse_args(args):
     But you do not have to follow this convention.
     '''
 
-    # TODO: change parameters after interface checking feedback
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--gmtk', help='Gmtk parameter results produced by Segway')
     parser.add_argument('--normalize-gmtk', action='store_true', help='If set, normalize gmtk parameters column wise')
@@ -390,30 +389,11 @@ def parse_args(args):
     return parser.parse_args(args)
 
 
-if __name__ == '__main__':
-    if 'snakemake' in dir():
-        arg_list = []
-        if snakemake.params.normalize_gmtk:
-            arg_list.append('--normalize-gmtk')
-        if snakemake.params.dendrogram:
-            arg_list.append('--dendrogram')
-        arg_list += ['--gmtk', snakemake.input.gmtk,
-                     '--nuc', snakemake.input.nuc,
-                     '--len_dist', snakemake.input.len_dist,
-                     '--overlap', snakemake.input.olp,
-                     '--mne', snakemake.input.mne,
-                     '--aggs', snakemake.input.aggs,
-                     '--stats', snakemake.input.stats,
-                     '--phastcons', snakemake.input.phastcons,
-                     '--repeatmasker', snakemake.input.repeatmasker,
-                     '--outfile', snakemake.params.outfile
-                     ]
-        args = parse_args(arg_list)
-    else:
-        args = parse_args(sys.argv[1:])
-        args.aggs = args.aggs.split(',')
+def main(args):
 
     # update environment variables
+    global OVERLAP_COLUMN_NUMBER
+    global NUM_COMPONENTS
     if args.repeatmasker:
         OVERLAP_COLUMN_NUMBER += 1
     if args.phastcons:
@@ -487,7 +467,7 @@ if __name__ == '__main__':
                                             leaf_font_size=int(LABEL_FONTSIZE),
                                             labels=new_labels)
 
-            # row_ordering = [label_translator[str(l)] for l in row_dendrogram['leaves']][::-1]
+            row_ordering = [label_translator[str(l)] for l in row_dendrogram['leaves']][::-1]
             res_gmtk = res_gmtk.loc[row_ordering]
             unnorm_res_gmtk = unnorm_res_gmtk.loc[row_ordering]
             norm_res_gmtk = norm_res_gmtk.loc[row_ordering]
@@ -534,7 +514,7 @@ if __name__ == '__main__':
             # Add min-max table for parameters matrix
             gmtk_table_content = [unnorm_res_gmtk.max().apply(human_format).tolist(),
                                   unnorm_res_gmtk.min().apply(human_format).tolist()]
-            generate_table(ax_gmtk, res_gmtk.shape[1], cbar_gmtk, gmtk_table_content, table_height)
+            generate_table(ax_gmtk, res_gmtk.shape[1], cbar_gmtk, gmtk_table_content, table_height, figure)
         else:
             cbar_gmtk.set_ticks(gmtk_max_min)
 
@@ -547,15 +527,6 @@ if __name__ == '__main__':
         else:
             ax_gmtk.set_yticklabels('')
             ax_gmtk.set_ylabel('')
-
-            # Manually move dendrogram axis closer to the gmtk axis.
-            # pos_gmtk = ax_gmtk.get_position()
-            # pos_dend = ax_dendrogram.get_position()
-            # x_transform = pos_gmtk.x0 - pos_dend.x1 - max(longest_label_len, 3)*FONT_SPACE_IN_FIGURE_COORD_SYSTEM
-            # pos_dend.x0 = pos_dend.x0 + x_transform
-            # pos_dend.x1 = pos_dend.x1 + x_transform
-            #
-            # ax_dendrogram.set_position(pos_dend)
 
         ax_gmtk.tick_params(axis='x', rotation=90)
         ax_gmtk.text(x=0, y=BOTTOM_TITLE_Y, s='Parameters', fontsize=MAIN_TITLE_FONTSIZE, ha='left', va='bottom')
@@ -591,7 +562,7 @@ if __name__ == '__main__':
     ax_mix.text(0, BOTTOM_TITLE_Y, "Segments", fontsize=SUBTITLE_FONTSIZE, ha='left', va='bottom')
     ax_mix.text(4, BOTTOM_TITLE_Y, "Bases", fontsize=SUBTITLE_FONTSIZE, ha='left', va='bottom')
     # Add min-max table for mix matrix
-    generate_table(ax_mix, res_mix_hm.shape[1], cbar_mix, MIX_TABLE_CONTENT, table_height)
+    generate_table(ax_mix, res_mix_hm.shape[1], cbar_mix, MIX_TABLE_CONTENT, table_height, figure)
 
     # Overlap
     divider_overlap = make_axes_locatable(ax_overlap)
@@ -655,3 +626,31 @@ if __name__ == '__main__':
     figure.savefig(args.outfile + '.png', bbox_inches='tight', dpi=350)
 
     figure.savefig(args.outfile + '.pdf', bbox_inches='tight')
+
+
+if __name__ == '__main__':
+    if 'snakemake' in dir():
+        arg_list = []
+        if snakemake.params.normalize_gmtk:
+            arg_list.append('--normalize-gmtk')
+        if snakemake.params.dendrogram:
+            arg_list.append('--dendrogram')
+        arg_list += ['--gmtk', snakemake.input.gmtk,
+                     '--nuc', snakemake.input.nuc,
+                     '--len_dist', snakemake.input.len_dist,
+                     '--overlap', snakemake.input.olp,
+                     '--mne', snakemake.input.mne,
+                     '--aggs', snakemake.input.aggs,
+                     '--stats', snakemake.input.stats,
+                     '--phastcons', snakemake.input.phastcons,
+                     '--repeatmasker', snakemake.input.repeatmasker,
+                     '--outfile', snakemake.params.outfile
+                     ]
+        args = parse_args(arg_list)
+    else:
+        args = parse_args(sys.argv[1:])
+        args.aggs = args.aggs.split(',')
+
+    main(args)
+
+
