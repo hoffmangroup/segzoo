@@ -139,7 +139,7 @@ def gmtk_parameters(args):
     Prepare the gmtk parameters in a DataFrame.
     """
     if not args.gmtk:
-        return pd.DataFrame(), pd.DataFrame(), [None, None]
+        return pd.DataFrame(), pd.DataFrame()
 
     def normalize_col(col):
         return (col - col.min()) / (col.max() - col.min())
@@ -408,6 +408,7 @@ def main(args):
         NUM_COMPONENTS += 1
 
     # Call the functions that obtain the results in DataFrames
+
     res_gmtk, gmtk_table_content_df = gmtk_parameters(args)
 
     res_mix_hm, res_mix_ann = mix_data_matrix(args)
@@ -417,22 +418,19 @@ def main(args):
 
     res_agg_dict, agg_vmax = aggregation(args)
 
-    heatmaps = [res_gmtk, res_mix_hm, res_mix_ann, overlap_hm]
-    heatmaps = heatmaps + list(res_agg_dict.values())
-
     # Read labels from mne file
-    track_labels = {True: [], False: res_gmtk.columns}[res_gmtk.empty]
     new_tracks, new_labels, track_translator, label_translator = \
-        get_mne_ticklabels(args.mne, track_labels, res_mix_hm.index)
+        get_mne_ticklabels(args.mne, res_gmtk.columns, res_mix_hm.index)
 
-    for i, hm in enumerate(heatmaps):
-        heatmaps[i].index = heatmaps[i].index.map(label_translator)
+    for hm in [res_gmtk, res_mix_hm, res_mix_ann, overlap_hm] + list(res_agg_dict.values()):
+        hm.index = hm.index.map(label_translator)
 
     row_ordering = new_labels
 
     # Dimensioning variables
     dendrogram_col = 2
     dendrogram_labels_col = calc_dendrogram_label_col(new_labels) if args.dendrogram else 0
+    # +1 for the color bar ?
     gmtk_col = res_gmtk.shape[1] * GMTK_FACTOR + 1
     mix_col = res_mix_hm.shape[1] * MIX_FACTOR + 1
     overlap_col = OVERLAP_COLUMN_NUMBER * OVERLAP_FACTOR + 1
@@ -477,8 +475,6 @@ def main(args):
             row_ordering = [label_translator[str(l)] for l in row_dendrogram['leaves']][::-1]
             res_gmtk = res_gmtk.loc[row_ordering]
 
-            for i, hm in enumerate(heatmaps):
-                heatmaps[i] = heatmaps[i].reindex(index=row_ordering, copy=False)
             ax_dendrogram.spines['right'].set_visible(False)
             ax_dendrogram.spines['left'].set_visible(False)
             ax_dendrogram.spines['top'].set_visible(False)
@@ -518,7 +514,6 @@ def main(args):
             # Add min-max table for parameters matrix
             gmtk_table_content = gmtk_table_content_df.values.tolist()
             generate_table(ax_gmtk, res_gmtk.shape[1], cbar_gmtk, gmtk_table_content, table_height, figure)
-
 
         # Setting titles and axis labels
         if not args.dendrogram:
@@ -624,7 +619,6 @@ def main(args):
         figure.delaxes(ax_agg)
 
     figure.savefig(args.outfile + '.png', bbox_inches='tight', dpi=350)
-
     figure.savefig(args.outfile + '.pdf', bbox_inches='tight')
 
 
