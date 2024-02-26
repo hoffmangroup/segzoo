@@ -1,5 +1,7 @@
 1.0.12:
 * convert GC to G+C
+* add RepeatMasker column
+* add PhastCons column
 
 1.0.11:
 * clean version of version 1.0.10
