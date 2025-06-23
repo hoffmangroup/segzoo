@@ -43,7 +43,7 @@ Upon completion of the execution, a new directory will be created (default name:
 - **results**: Contains the processed result tables used in the visualization.
 - **plots**: Contains the final visualization, which will resemble the example below:
 
-![Plot](https://github.com/mmendez12/segzoo/blob/master/plots/plot.png)
+![Plot](https://github.com/mmendez12/segzoo/blob/master/plots/normalized_plot.png)
 
 In the visualization:
 - The y-axis represents the labels of the segmentation for all the heatmaps.
